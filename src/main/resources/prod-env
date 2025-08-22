@@ -1,0 +1,4 @@
+DB_URL=jdbc:sqlserver://10.201.0.233:1433;databaseName=Surl_KDH;encrypt=true;trustServerCertificate=true
+DB_USERNAME=kdh
+DB_PASSWORD=SecurePassword123!
+JWT_SECRET=iammegastudyinternkimdeukhopleasepickme7777
