@@ -12,7 +12,6 @@
         <result property="role" column="role"/>
         <result property="departmentName" column="department_name"/>
         <result property="expiresAt" column="expires_at"/>
-        <result property="lastUsedAt" column="last_used_at"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
         <result property="deletedAt" column="deleted_at"/>
@@ -27,7 +26,6 @@
                role,
                department_name,
                expires_at,
-               last_used_at,
                created_at,
                updated_at,
                deleted_at
@@ -46,7 +44,6 @@
                role,
                department_name,
                expires_at,
-               last_used_at,
                created_at,
                updated_at,
                deleted_at
@@ -63,7 +60,6 @@
                role,
                department_name,
                expires_at,
-               last_used_at,
                created_at,
                updated_at,
                deleted_at
@@ -81,7 +77,6 @@
                role,
                department_name,
                expires_at,
-               last_used_at,
                created_at,
                updated_at,
                deleted_at
@@ -99,7 +94,6 @@
                role,
                department_name,
                expires_at,
-               last_used_at,
                created_at,
                updated_at,
                deleted_at
@@ -117,7 +111,6 @@
         role,
         department_name,
         expires_at,
-        last_used_at,
         created_at,
         updated_at,
         deleted_at
@@ -139,7 +132,6 @@
                role,
                department_name,
                expires_at,
-               last_used_at,
                created_at,
                updated_at,
                deleted_at
@@ -283,7 +275,6 @@
         role,
         department_name,
         expires_at,
-        last_used_at,
         created_at,
         updated_at,
         deleted_at

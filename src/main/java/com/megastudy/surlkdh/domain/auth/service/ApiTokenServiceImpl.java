@@ -1,5 +1,7 @@
 package com.megastudy.surlkdh.domain.auth.service;
 
+import static com.megastudy.surlkdh.domain.auth.entity.AuthType.*;
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -41,7 +43,6 @@ import lombok.extern.slf4j.Slf4j;
 @Transactional(readOnly = true)
 @Slf4j
 public class ApiTokenServiceImpl implements ApiTokenService {
-
 	private final ApiTokenRepository apiTokenRepository;
 	private final MemberRepository memberRepository;
 	private final RoleHierarchy roleHierarchy;
@@ -217,9 +218,11 @@ public class ApiTokenServiceImpl implements ApiTokenService {
 
 		MemberPrincipal memberPrincipal = MemberPrincipal.of(
 			apiToken.getMemberId(),
+			API_TOKEN.getType(),
 			apiToken.getDepartmentName(),
 			authorities
 		);
+
 		return new UsernamePasswordAuthenticationToken(memberPrincipal, apiTokenValue, authorities);
 	}
 

@@ -26,7 +26,7 @@ public class ShortUrl extends BaseTimeEntity {
 	private LocalDateTime expiresAt;
 
 	public static ShortUrl create(String shortCode, Department departmentName,
-		Long creatorId, String creatorType, List<ShortUrlRedirectRule> shortUrlRedirectRules, LocalDateTime expiresAt,
+		Long creatorId, String creatorType, LocalDateTime expiresAt,
 		String note) {
 		return ShortUrl.builder()
 			.shortCode(shortCode)
@@ -35,7 +35,6 @@ public class ShortUrl extends BaseTimeEntity {
 			.creatorType(creatorType)
 			.expiresAt(expiresAt)
 			.note(note)
-			.shortUrlRedirectRules(shortUrlRedirectRules)
 			.build();
 	}
 
@@ -48,4 +47,3 @@ public class ShortUrl extends BaseTimeEntity {
 		return "localhost/" + shortCode;
 	}
 }
-

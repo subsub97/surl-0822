@@ -22,8 +22,8 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @RequiredArgsConstructor
 public class CustomAuthenticationFilter extends OncePerRequestFilter {
-	private static final String API_TOKEN_HEADER = "api-token";
-	private static final String JWT_HEADER = "Authorization";
+	public static final String API_TOKEN_HEADER = "api-token";
+	public static final String JWT_HEADER = "Authorization";
 	private static final String BEARER_PREFIX = "Bearer ";
 	private static final String TARGET_PREFIX = "/api/v1/";
 

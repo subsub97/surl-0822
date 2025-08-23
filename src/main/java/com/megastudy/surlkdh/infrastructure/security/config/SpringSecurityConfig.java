@@ -59,8 +59,8 @@ public class SpringSecurityConfig {
 			.formLogin(Customizer.withDefaults())
 			.httpBasic(httpBasic -> httpBasic.disable())
 			.csrf(csrf -> csrf.disable())
-			.addFilterBefore(customAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 			.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
+			.addFilterAfter(customAuthenticationFilter, JwtAuthenticationFilter.class)
 			.addFilterAt(new LoginFilter(authenticationManager, objectMapper, jwtTokenProvider),
 				UsernamePasswordAuthenticationFilter.class)
 			.authorizeHttpRequests(auth -> auth
@@ -95,4 +95,3 @@ public class SpringSecurityConfig {
 		);
 	}
 }
-

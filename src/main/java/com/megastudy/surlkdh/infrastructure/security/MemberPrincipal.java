@@ -33,9 +33,10 @@ public class MemberPrincipal implements UserDetails {
 		this.authorities = authorities;
 	}
 
-	private MemberPrincipal(Long id, Department departmentName, Collection<? extends GrantedAuthority> authorities) {
+	private MemberPrincipal(Long id, String username, Department departmentName,
+		Collection<? extends GrantedAuthority> authorities) {
 		this.id = id;
-		this.username = null;
+		this.username = username;
 		this.password = null;
 		this.departmentName = departmentName;
 		this.authorities = authorities;
@@ -53,9 +54,9 @@ public class MemberPrincipal implements UserDetails {
 		);
 	}
 
-	public static MemberPrincipal of(Long id, Department departmentName,
+	public static MemberPrincipal of(Long id, String username, Department departmentName,
 		Collection<? extends GrantedAuthority> authorities) {
-		return new MemberPrincipal(id, departmentName, authorities);
+		return new MemberPrincipal(id, username, departmentName, authorities);
 	}
 
 	@Override

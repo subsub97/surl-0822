@@ -24,4 +24,11 @@ public class ShortUrlRedirectRule extends BaseTimeEntity {
 			.targetUrl(targetUrl)
 			.build();
 	}
+
+	public static ShortUrlRedirectRule from(String targetUrl, DeviceType deviceType) {
+		return ShortUrlRedirectRule.builder()
+			.deviceType(deviceType)
+			.targetUrl(targetUrl)
+			.build();
+	}
 }

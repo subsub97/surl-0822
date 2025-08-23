@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.megastudy.surlkdh.common.api.ApiResponse;
 import com.megastudy.surlkdh.domain.shorturl.controller.dto.request.CreateShortUrlRequest;
+import com.megastudy.surlkdh.domain.shorturl.controller.dto.response.ShortUrlResponse;
+import com.megastudy.surlkdh.domain.shorturl.controller.port.ShortUrlService;
 import com.megastudy.surlkdh.infrastructure.security.MemberPrincipal;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,6 +27,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ShortUrlController {
 
+	private final ShortUrlService shortUrlService;
+
 	@Operation(
 		summary = "단축 URL 생성",
 		description = "새로운 단축 URL을 생성합니다. URL_CRUD 권한을 소유하고 본인이 소속된 부서만 가능합니다.",
@@ -32,11 +36,15 @@ public class ShortUrlController {
 	)
 	@PostMapping
 	@PreAuthorize("hasAuthority('ADMIN') or (hasAuthority('LEADER') and #request.department == authentication.principal.departmentName)")
-	public ApiResponse<?> createShotUrl(
+	public ApiResponse<ShortUrlResponse> createShotUrl(
 		@AuthenticationPrincipal MemberPrincipal principal,
 		@Valid @RequestBody CreateShortUrlRequest request) {
 
-		log.info("Creating short URL for request: {}", request);
-		return null;
+		log.info("principal: {} , {} , {}  ", principal.getId(), principal.getUsername(),
+			principal.getDepartmentName());
+
+		shortUrlService.createShortUrl(request, principal.getId());
+
+		return ApiResponse.created(null);
 	}
 }

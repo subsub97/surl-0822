@@ -10,4 +10,8 @@ import lombok.NoArgsConstructor;
 public class ShortUrlResponse {
 
 	private String shortCode;
+
+	public static ShortUrlResponse of(String shortCode) {
+		return new ShortUrlResponse(shortCode);
+	}
 }

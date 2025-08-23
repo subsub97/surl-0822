@@ -1,5 +1,7 @@
 package com.megastudy.surlkdh.infrastructure.security.jwt;
 
+import static com.megastudy.surlkdh.domain.auth.entity.AuthType.*;
+
 import java.security.Key;
 import java.util.Arrays;
 import java.util.Collection;
@@ -98,7 +100,7 @@ public class JwtTokenProvider {
 		Long memberId = getMemberIdFromToken(token);
 		Department departmentName = getDepartmentFromToken(token);
 
-		MemberPrincipal memberPrincipal = MemberPrincipal.of(memberId, departmentName, authorities);
+		MemberPrincipal memberPrincipal = MemberPrincipal.of(memberId, JWT.getType(), departmentName, authorities);
 		return new UsernamePasswordAuthenticationToken(memberPrincipal, token, authorities);
 	}
 

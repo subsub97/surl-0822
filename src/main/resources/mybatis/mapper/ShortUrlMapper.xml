@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.megastudy.surlkdh.domain.shorturl.infrastructure.mybatis.mapper.ShortUrlMapper">
+
+    <resultMap id="shortUrlResult"
+               type="com.megastudy.surlkdh.domain.shorturl.infrastructure.mybatis.dto.ShortUrlEntity">
+        <id property="shortUrlId" column="short_url_id" javaType="java.lang.Long"/>
+        <result property="shortCode" column="short_code"/>
+        <result property="departmentName" column="department_name"/>
+        <result property="creatorId" column="creator_id" javaType="java.lang.Long"/>
+        <result property="creatorType" column="creator_type"/>
+        <result property="note" column="note"/>
+        <result property="expiresAt" column="expires_at" javaType="java.time.LocalDateTime"/>
+        <result property="createdAt" column="su_created_at" javaType="java.time.LocalDateTime"/>
+        <result property="updatedAt" column="su_updated_at" javaType="java.time.LocalDateTime"/>
+        <result property="deletedAt" column="su_deleted_at" javaType="java.time.LocalDateTime"/>
+
+        <collection property="shortUrlRedirectRules"
+                    ofType="com.megastudy.surlkdh.domain.shorturl.infrastructure.mybatis.dto.ShortUrlRedirectRuleEntity">
+            <id property="redirectRuleId" column="redirect_rule_id" javaType="java.lang.Long"/>
+            <result property="shortUrlId" column="surr_short_url_id" javaType="java.lang.Long"/>
+            <result property="deviceType" column="device_type"/>
+            <result property="targetUrl" column="target_url"/>
+            <result property="createdAt" column="surr_created_at" javaType="java.time.LocalDateTime"/>
+            <result property="updatedAt" column="surr_updated_at" javaType="java.time.LocalDateTime"/>
+            <result property="deletedAt" column="surr_deleted_at" javaType="java.time.LocalDateTime"/>
+        </collection>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="shortUrlId" keyColumn="short_url_id">
+        INSERT INTO short_url (
+        short_code,
+        department_name,
+        creator_id,
+        creator_type,
+        note,
+        created_at,
+        updated_at,
+        expires_at
+        ) VALUES (
+        #{shortCode},
+        #{departmentName},
+        #{creatorId},
+        #{creatorType},
+        #{note},
+        GETDATE(),
+        GETDATE(),
+        #{expiresAt}
+        )
+    </insert>
+
+    <select id="findByShortCode" resultMap="shortUrlResult">
+        SELECT
+        su.short_url_id,
+        su.short_code,
+        su.department_name,
+        su.creator_id,
+        su.creator_type,
+        su.note,
+        su.created_at AS su_created_at,
+        su.updated_at AS su_updated_at,
+        su.deleted_at AS su_deleted_at,
+        su.expires_at,
+        surr.redirect_rule_id,
+        surr.short_url_id AS surr_short_url_id,
+        surr.device_type,
+        surr.target_url,
+        surr.created_at AS surr_created_at,
+        surr.updated_at AS surr_updated_at,
+        surr.deleted_at AS surr_deleted_at
+        FROM short_url su
+        LEFT JOIN short_url_redirect_rule surr ON su.short_url_id = surr.short_url_id
+        WHERE su.short_code = #{shortCode}
+        AND su.deleted_at IS NULL
+    </select>
+
+    <insert id="insertRedirectRules">
+        INSERT INTO short_url_redirect_rule (
+        short_url_id,
+        device_type,
+        target_url,
+        created_at,
+        updated_at
+        ) VALUES
+        <foreach collection="list" item="rule" separator=",">
+            (
+            #{rule.shortUrlId},
+            #{rule.deviceType},
+            #{rule.targetUrl},
+            GETDATE(),
+            GETDATE()
+            )
+        </foreach>
+    </insert>
+
+</mapper>
