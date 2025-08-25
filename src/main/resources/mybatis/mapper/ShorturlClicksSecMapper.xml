@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.megastudy.surlkdh.domain.statistics.infrastructure.mybatis.mapper.ShorturlClicksSecMapper">
+
+    <update id="upsertAll" parameterType="java.util.List">
+        MERGE INTO shorturl_clicks_sec AS target
+        USING (
+            <foreach collection="list" item="item" separator=" UNION ALL ">
+                SELECT
+                    #{item.shortUrlId} AS short_url_id,
+                    #{item.tsSec} AS ts_sec,
+                    #{item.countryCode} AS country_code,
+                    #{item.deviceType} AS device_type,
+                    #{item.referrer} AS referrer,
+                    #{item.clicksCnt} AS clicks_cnt
+            </foreach>
+        ) AS source
+        ON (target.short_url_id = source.short_url_id
+            AND target.ts_sec = source.ts_sec
+            AND target.country_code = source.country_code
+            AND target.device_type = source.device_type
+            AND target.referrer = source.referrer)
+        WHEN MATCHED THEN
+            UPDATE SET
+                target.clicks_cnt = target.clicks_cnt + source.clicks_cnt,
+                target.updated_at = GETDATE()
+        WHEN NOT MATCHED THEN
+            INSERT (short_url_id, ts_sec, country_code, device_type, referrer, clicks_cnt, created_at, updated_at)
+            VALUES (source.short_url_id, source.ts_sec, source.country_code, source.device_type, source.referrer, source.clicks_cnt, GETDATE(), GETDATE());
+    </update>
+
+</mapper>

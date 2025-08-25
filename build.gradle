@@ -45,6 +45,10 @@ dependencies {
     implementation "io.jsonwebtoken:jjwt-jackson:0.12.7"
     // myBatis 쿼리 디버깅을 위한 p6spy
     implementation 'p6spy:p6spy:3.9.1'
+
+    // redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'com.github.ua-parser:uap-java:1.6.1'
 }
 
 tasks.named('test') {

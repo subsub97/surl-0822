@@ -7,16 +7,22 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.megastudy.surlkdh.common.exception.BusinessException;
+import com.megastudy.surlkdh.common.exception.CommonErrorCode;
 import com.megastudy.surlkdh.domain.shorturl.controller.dto.request.CreateShortUrlRequest;
 import com.megastudy.surlkdh.domain.shorturl.controller.dto.response.ShortUrlResponse;
 import com.megastudy.surlkdh.domain.shorturl.controller.port.ShortUrlService;
+import com.megastudy.surlkdh.domain.shorturl.entity.DeviceType;
 import com.megastudy.surlkdh.domain.shorturl.entity.ShortUrl;
 import com.megastudy.surlkdh.domain.shorturl.entity.ShortUrlRedirectRule;
 import com.megastudy.surlkdh.domain.shorturl.service.port.ShortUrlRepository;
 import com.megastudy.surlkdh.domain.shorturl.util.ShortCodeUtil;
+import com.megastudy.surlkdh.domain.statistics.service.StatisticsService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import ua_parser.Client;
+import ua_parser.Parser;
 
 @Slf4j
 @Service
@@ -25,6 +31,8 @@ public class ShortUrlServiceImpl implements ShortUrlService {
 
 	private final ShortCodeUtil shortCodeUtil;
 	private final ShortUrlRepository shortUrlRepository;
+	private final StatisticsService statisticsService;
+	private final Parser uaParser = new Parser();
 
 	@Override
 	@Transactional
@@ -69,5 +77,43 @@ public class ShortUrlServiceImpl implements ShortUrlService {
 		}
 
 		return null;
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public String redirect(String shortCode, String userAgent, String referrer, String ipAddress) {
+		ShortUrl shortUrl = shortUrlRepository.findByShortCode(shortCode)
+			.orElseThrow(() -> new BusinessException(CommonErrorCode.BAD_REQUEST));
+
+		DeviceType deviceType = parseDeviceType(userAgent);
+
+		String targetUrl = shortUrl.getShortUrlRedirectRules().stream()
+			.filter(rule -> rule.getDeviceType() == deviceType)
+			.findFirst()
+			.map(ShortUrlRedirectRule::getTargetUrl)
+			.orElseGet(() -> shortUrl.getShortUrlRedirectRules().stream()
+				.findFirst()
+				.map(ShortUrlRedirectRule::getTargetUrl)
+				.orElseThrow(() -> new BusinessException(CommonErrorCode.BAD_REQUEST)));
+
+		statisticsService.collectClickData(shortUrl, ipAddress, userAgent, referrer);
+
+		return targetUrl;
+	}
+
+	private DeviceType parseDeviceType(String userAgent) {
+		if (userAgent == null) {
+			return DeviceType.PC; // Default to PC
+		}
+		Client c = uaParser.parse(userAgent);
+		String deviceFamily = c.device.family;
+		String osFamily = c.os.family;
+
+		if (deviceFamily.equalsIgnoreCase("Spider") || osFamily.contains("Bot")) {
+			return DeviceType.PC; // Treat bots as PC
+		}
+
+		boolean isMobile = osFamily.matches("(?i)Android|iOS|Windows Phone|Bada|Tizen|BlackBerry");
+		return isMobile ? DeviceType.MOBILE : DeviceType.PC;
 	}
 }

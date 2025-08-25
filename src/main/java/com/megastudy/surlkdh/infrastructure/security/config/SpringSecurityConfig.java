@@ -65,6 +65,7 @@ public class SpringSecurityConfig {
 				UsernamePasswordAuthenticationFilter.class)
 			.authorizeHttpRequests(auth -> auth
 				.requestMatchers(
+					"/*", // for redirection
 					"/swagger-ui/**",
 					"/swagger-resources/**",
 					"/swagger-ui.html",
