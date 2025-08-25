@@ -23,7 +23,7 @@ public class ApiTokenEntity {
 	private String tokenName;
 	private String tokenValue;
 	private String role;
-	private String departmentName;
+	private String department;
 	private LocalDateTime expiresAt;
 	private LocalDateTime lastUsedAt;
 	private LocalDateTime createdAt;
@@ -40,7 +40,7 @@ public class ApiTokenEntity {
 			.tokenName(apiToken.getTokenName())
 			.tokenValue(apiToken.getTokenValue())
 			.role(apiToken.getRole().getKey())
-			.departmentName(apiToken.getDepartmentName().name())
+			.department(apiToken.getDepartment().name())
 			.expiresAt(apiToken.getExpiresAt())
 			.lastUsedAt(apiToken.getLastUsedAt())
 			.createdAt(apiToken.getCreatedAt())
@@ -59,8 +59,8 @@ public class ApiTokenEntity {
 			.tokenName(tokenName)
 			.tokenValue(tokenValue)
 			.role(Role.fromKey(role))
-			.departmentName(
-				Department.fromName(departmentName))
+			.department(
+				Department.fromName(department))
 			.expiresAt(expiresAt)
 			.lastUsedAt(lastUsedAt)
 			.createdAt(createdAt)

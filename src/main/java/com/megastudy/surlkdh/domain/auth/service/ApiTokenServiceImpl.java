@@ -1,6 +1,6 @@
 package com.megastudy.surlkdh.domain.auth.service;
 
-import static com.megastudy.surlkdh.domain.auth.entity.AuthType.*;
+import static com.megastudy.surlkdh.domain.auth.entity.UserType.*;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -86,7 +86,7 @@ public class ApiTokenServiceImpl implements ApiTokenService {
 			hashedToken,
 			request.getExpiresAt(),
 			request.getRole(),
-			request.getDepartmentName()
+			request.getDepartment()
 		);
 
 		ApiToken savedToken = apiTokenRepository.save(apiToken);
@@ -100,7 +100,7 @@ public class ApiTokenServiceImpl implements ApiTokenService {
 			.expiresAt(savedToken.getExpiresAt())
 			.lastUsedAt(savedToken.getLastUsedAt())
 			.role(savedToken.getRole())
-			.departmentName(savedToken.getDepartmentName())
+			.department(savedToken.getDepartment())
 			.createdAt(savedToken.getCreatedAt())
 			.updatedAt(savedToken.getUpdatedAt())
 			.deletedAt(savedToken.getDeletedAt())
@@ -135,8 +135,8 @@ public class ApiTokenServiceImpl implements ApiTokenService {
 			.expiresAt(request.getExpiresAt() != null ? request.getExpiresAt() : apiToken.getExpiresAt())
 			.lastUsedAt(apiToken.getLastUsedAt())
 			.role(request.getRole() != null ? request.getRole() : apiToken.getRole())
-			.departmentName(request.getDepartmentName() != null ? request.getDepartmentName() :
-				apiToken.getDepartmentName()) // Added
+			.department(request.getDepartment() != null ? request.getDepartment() :
+				apiToken.getDepartment()) // Added
 			.createdAt(apiToken.getCreatedAt())
 			.updatedAt(apiToken.getUpdatedAt())
 			.deletedAt(apiToken.getDeletedAt())
@@ -219,7 +219,7 @@ public class ApiTokenServiceImpl implements ApiTokenService {
 		MemberPrincipal memberPrincipal = MemberPrincipal.of(
 			apiToken.getMemberId(),
 			API_TOKEN.getType(),
-			apiToken.getDepartmentName(),
+			apiToken.getDepartment(),
 			authorities
 		);
 
@@ -257,9 +257,9 @@ public class ApiTokenServiceImpl implements ApiTokenService {
 		if (member.getRole() == Role.ADMIN) {
 			return;
 		}
-		if (!apiToken.getDepartmentName().equals(member.getDepartmentName())) {
+		if (!apiToken.getDepartment().equals(member.getDepartment())) {
 			log.error("본인이 소속한 부서의 토큰만 접근할 수 있습니다. 요청한 부서: {}, 토큰 소유자 부서: {}",
-				member.getDepartmentName(), apiToken.getDepartmentName());
+				member.getDepartment(), apiToken.getDepartment());
 			throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
 		}
 	}

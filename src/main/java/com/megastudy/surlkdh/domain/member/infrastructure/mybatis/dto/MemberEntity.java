@@ -21,8 +21,8 @@ public class MemberEntity {
 	private Long memberId;
 	private String email;
 	private String password;
-	private String departmentName; // MyBatis mapping to String
-	private String role; // MyBatis mapping to String
+	private String department;
+	private String role;
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;
 	private LocalDateTime deletedAt;
@@ -32,7 +32,7 @@ public class MemberEntity {
 			.memberId(member.getMemberId())
 			.email(member.getEmail())
 			.password(member.getPassword())
-			.departmentName(member.getDepartmentName().getName()) // Convert Department enum to String description
+			.department(member.getDepartment().getName()) // Convert Department enum to String description
 			.role(member.getRole().getKey()) // Convert Role enum to String key
 			.createdAt(member.getCreatedAt())
 			.updatedAt(member.getUpdatedAt())
@@ -45,7 +45,7 @@ public class MemberEntity {
 			.memberId(memberId)
 			.email(email)
 			.password(password)
-			.departmentName(Department.fromName(departmentName)) // Convert String description to Department enum
+			.department(Department.fromName(department)) // Convert String description to Department enum
 			.role(Role.fromKey(role)) // Convert String key to Role enum
 			.createdAt(createdAt)
 			.updatedAt(updatedAt)

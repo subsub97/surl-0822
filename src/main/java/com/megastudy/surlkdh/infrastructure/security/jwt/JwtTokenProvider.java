@@ -1,6 +1,6 @@
 package com.megastudy.surlkdh.infrastructure.security.jwt;
 
-import static com.megastudy.surlkdh.domain.auth.entity.AuthType.*;
+import static com.megastudy.surlkdh.domain.auth.entity.UserType.*;
 
 import java.security.Key;
 import java.util.Arrays;
@@ -98,9 +98,9 @@ public class JwtTokenProvider {
 			.collect(Collectors.toList());
 
 		Long memberId = getMemberIdFromToken(token);
-		Department departmentName = getDepartmentFromToken(token);
+		Department department = getDepartmentFromToken(token);
 
-		MemberPrincipal memberPrincipal = MemberPrincipal.of(memberId, JWT.getType(), departmentName, authorities);
+		MemberPrincipal memberPrincipal = MemberPrincipal.of(memberId, JWT.getType(), department, authorities);
 		return new UsernamePasswordAuthenticationToken(memberPrincipal, token, authorities);
 	}
 
@@ -161,7 +161,7 @@ public class JwtTokenProvider {
 			.subject(memberPrincipal.getId().toString())
 			.audience().add("surl-api").and()
 			.claim(CLAIM_ROLE, authoritiesCsv)
-			.claim(CLAIM_DEPARTMENT, memberPrincipal.getDepartmentName().name())
+			.claim(CLAIM_DEPARTMENT, memberPrincipal.getDepartment().name())
 			.issuedAt(issuedAt)
 			.expiration(new Date(currentTime + ONE_DAY))
 			.signWith(key)
@@ -177,7 +177,7 @@ public class JwtTokenProvider {
 			.audience().add("surl-api").and()
 			.claim(CLAIM_ROLE, authoritiesCsv)
 			.claim(CLAIM_ADD, "ref") // refresh token을 구분하기 위한 claim
-			.claim(CLAIM_DEPARTMENT, memberPrincipal.getDepartmentName().name())
+			.claim(CLAIM_DEPARTMENT, memberPrincipal.getDepartment().name())
 			.issuedAt(issuedAt)
 			.expiration(new Date(currentTime + ONE_WEEK))
 			.signWith(key)

@@ -65,15 +65,12 @@ public class SpringSecurityConfig {
 				UsernamePasswordAuthenticationFilter.class)
 			.authorizeHttpRequests(auth -> auth
 				.requestMatchers(
-					"/swagger-ui/**",
-					"/swagger-resources/**",
-					"/swagger-ui.html",
-					"/v3/api-docs/**",
 					"/api/v1/auth/signup",
-					"/api/v1/auth/login")
+					"/api/v1/auth/login"
+				)
 				.permitAll()
-				.requestMatchers("/api/stat").authenticated()
-				.anyRequest().authenticated()
+				.requestMatchers("/api/**").authenticated()
+				.anyRequest().permitAll()
 			);
 
 		http

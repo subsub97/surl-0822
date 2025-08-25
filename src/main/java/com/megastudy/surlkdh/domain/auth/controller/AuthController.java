@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.megastudy.surlkdh.common.api.ApiResponse;
 import com.megastudy.surlkdh.domain.auth.controller.dto.reqeust.SignUpRequest;
 import com.megastudy.surlkdh.domain.auth.controller.port.AuthService;
+import com.megastudy.surlkdh.infrastructure.security.dto.LoginRequest;
+import com.megastudy.surlkdh.infrastructure.security.dto.LoginResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,6 +32,19 @@ public class AuthController {
 	public ApiResponse<Void> createMember(@Validated @RequestBody SignUpRequest signUpRequest) {
 		authService.signUp(signUpRequest);
 		return ApiResponse.created(null);
+	}
+
+	@Operation(
+		summary = "로그인",
+		description = "사용자 인증을 통해 JWT 토큰을 발급합니다."
+	)
+	@PostMapping("/api/v1/auth/login")
+	public ApiResponse<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
+		/**
+		 실제 인증은 LoginFilter에서 처리된다.
+		 Swagger 명세를 위해 작성했습니다.
+		 */
+		return ApiResponse.ok(null);
 	}
 }
 

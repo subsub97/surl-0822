@@ -5,6 +5,8 @@ import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.megastudy.surlkdh.infrastructure.security.filter.CustomAuthenticationFilter;
+
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
@@ -15,17 +17,22 @@ import io.swagger.v3.oas.models.servers.Server;
 @Configuration
 public class SwaggerConfig {
 
-	SecurityScheme securityScheme = new SecurityScheme()
+	SecurityScheme bearerAuthScheme = new SecurityScheme()
 		.type(SecurityScheme.Type.HTTP).scheme("bearer").bearerFormat("JWT")
-		.in(SecurityScheme.In.HEADER).name("Authorization");
+		.in(SecurityScheme.In.HEADER).name(CustomAuthenticationFilter.API_TOKEN_HEADER);
 
-	SecurityRequirement securityRequirement = new SecurityRequirement().addList("bearerAuth");
+	SecurityScheme apiTokenScheme = new SecurityScheme()
+		.type(SecurityScheme.Type.APIKEY)
+		.in(SecurityScheme.In.HEADER)
+		.name(CustomAuthenticationFilter.API_TOKEN_HEADER);
 
 	@Bean
 	public OpenAPI openAPI() {
 		return new OpenAPI()
-			.components(new Components().addSecuritySchemes("bearerAuth", securityScheme))
-			.addSecurityItem(securityRequirement)
+			.components(new Components()
+				.addSecuritySchemes("bearerAuth", bearerAuthScheme)
+				.addSecuritySchemes("api-token", apiTokenScheme))
+			.addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
 			.servers(List.of(
 				new Server().url("http://localhost:8080")
 			))

@@ -1,4 +1,0 @@
-DB_URL=jdbc:sqlserver://localhost:1433;databaseName=master;encrypt=true;trustServerCertificate=true
-DB_USERNAME=sa
-DB_PASSWORD=YourStrong!Passw0rd
-JWT_SECRET=iammegastudyinternkimdeukhopleasepickme7777

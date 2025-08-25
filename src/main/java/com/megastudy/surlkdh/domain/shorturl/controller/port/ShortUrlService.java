@@ -1,8 +1,23 @@
 package com.megastudy.surlkdh.domain.shorturl.controller.port;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import com.megastudy.surlkdh.domain.auth.entity.UserType;
+import com.megastudy.surlkdh.domain.member.entity.Department;
+import com.megastudy.surlkdh.domain.member.entity.Role;
 import com.megastudy.surlkdh.domain.shorturl.controller.dto.request.CreateShortUrlRequest;
+import com.megastudy.surlkdh.domain.shorturl.controller.dto.request.UpdateShortUrlRequest;
+import com.megastudy.surlkdh.domain.shorturl.controller.dto.response.ShortCodeResponse;
 import com.megastudy.surlkdh.domain.shorturl.controller.dto.response.ShortUrlResponse;
 
 public interface ShortUrlService {
-	ShortUrlResponse createShortUrl(CreateShortUrlRequest request, Long actorId);
+	ShortCodeResponse createShortUrl(CreateShortUrlRequest request, Long actorId, UserType userType);
+
+	ShortUrlResponse updateShortUrl(Long shortUrlId, UpdateShortUrlRequest request, Long actorId, UserType userType);
+
+	ShortUrlResponse getShortUrlByShortUrlId(Long shortUrlId, Role role, Department department);
+
+	Page<ShortUrlResponse> getShortUrls(Role role, Department department, Pageable pageable);
+
 }

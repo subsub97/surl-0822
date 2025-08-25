@@ -9,7 +9,7 @@
         <id property="memberId" column="member_id" javaType="java.lang.Long"/>
         <result property="email" column="email"/>
         <result property="password" column="password"/>
-        <result property="departmentName" column="department_name"/>
+        <result property="department" column="department_name"/>
         <result property="role" column="role"/>
         <result property="createdAt" column="created_at" javaType="java.time.LocalDateTime"/>
         <result property="updatedAt" column="updated_at" javaType="java.time.LocalDateTime"/>
@@ -22,7 +22,7 @@
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="memberId">
         INSERT INTO dbo.member(email, password, department_name, role, created_at, updated_at)
-        VALUES (#{email}, #{password}, #{departmentName}, #{role}, GETDATE(), GETDATE())
+        VALUES (#{email}, #{password}, #{department}, #{role}, GETDATE(), GETDATE())
     </insert>
 
     <select id="findByEmail" resultMap="MemberResultMap">

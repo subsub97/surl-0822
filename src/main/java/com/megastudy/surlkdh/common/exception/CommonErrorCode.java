@@ -7,7 +7,11 @@ public enum CommonErrorCode implements ErrorCode {
 	ACCESS_DENIED("COMMON.ACCESS_DENIED", "접근 권한이 없습니다.", HttpStatus.FORBIDDEN),
 	FORBIDDEN_UPDATE("COMMON.MODIFIED_DENIED", "수정 권한이 없습니다.", HttpStatus.FORBIDDEN),
 	FORBIDDEN_DELETE("COMMON.DELETE_DENIED", "삭제 권한이 없습니다.", HttpStatus.FORBIDDEN),
-	SERVER_ERROR("COMMON.SERVER_ERROR", "서버 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
+	SERVER_ERROR("COMMON.SERVER_ERROR", "서버 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+
+	//shortUrl 관련 ERROR
+	DUPLICATION_ERROR("S_URL.DUPLICATION_ERROR", "요청하신 단축 URL은 사용할 수 없습니다.", HttpStatus.CONFLICT),
+	MAX_RETRY_ERROR("S_URL.RANDOM_CODE_ERROR", "단축 URL 생성에 실패했습니다. 잠시후 재시도 해주세요.", HttpStatus.INTERNAL_SERVER_ERROR);
 
 	private final String code;
 	private final String message;

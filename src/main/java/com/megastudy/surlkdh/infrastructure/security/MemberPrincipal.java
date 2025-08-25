@@ -18,27 +18,27 @@ public class MemberPrincipal implements UserDetails {
 	private final Long id;
 	private final String username;
 	private final String password;
-	private final Department departmentName;
+	private final Department department;
 	private final Collection<? extends GrantedAuthority> authorities;
 
 	private MemberPrincipal(Long id,
 		String username,
 		String password,
-		Department departmentName,
+		Department department,
 		Collection<? extends GrantedAuthority> authorities) {
 		this.id = id;
 		this.username = username;
 		this.password = password;
-		this.departmentName = departmentName;
+		this.department = department;
 		this.authorities = authorities;
 	}
 
-	private MemberPrincipal(Long id, String username, Department departmentName,
+	private MemberPrincipal(Long id, String username, Department department,
 		Collection<? extends GrantedAuthority> authorities) {
 		this.id = id;
 		this.username = username;
 		this.password = null;
-		this.departmentName = departmentName;
+		this.department = department;
 		this.authorities = authorities;
 	}
 
@@ -49,14 +49,14 @@ public class MemberPrincipal implements UserDetails {
 			member.getMemberId(),
 			member.getEmail(),
 			member.getPassword(),
-			member.getDepartmentName(),
+			member.getDepartment(),
 			auths
 		);
 	}
 
-	public static MemberPrincipal of(Long id, String username, Department departmentName,
+	public static MemberPrincipal of(Long id, String username, Department department,
 		Collection<? extends GrantedAuthority> authorities) {
-		return new MemberPrincipal(id, username, departmentName, authorities);
+		return new MemberPrincipal(id, username, department, authorities);
 	}
 
 	@Override

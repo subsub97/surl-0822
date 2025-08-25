@@ -10,8 +10,9 @@
         <result property="tokenName" column="token_name"/>
         <result property="tokenValue" column="token_value"/>
         <result property="role" column="role"/>
-        <result property="departmentName" column="department_name"/>
+        <result property="department" column="department_name"/>
         <result property="expiresAt" column="expires_at"/>
+        <result property="lastUsedAt" column="last_used_at"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
         <result property="deletedAt" column="deleted_at"/>
@@ -26,6 +27,7 @@
                role,
                department_name,
                expires_at,
+               last_used_at,
                created_at,
                updated_at,
                deleted_at
@@ -44,6 +46,7 @@
                role,
                department_name,
                expires_at,
+               last_used_at,
                created_at,
                updated_at,
                deleted_at
@@ -60,6 +63,7 @@
                role,
                department_name,
                expires_at,
+               last_used_at,
                created_at,
                updated_at,
                deleted_at
@@ -69,7 +73,7 @@
         ORDER BY created_at DESC
     </select>
 
-    <select id="findByDepartmentName" resultMap="ApiTokenResultMap">
+    <select id="findBydepartment" resultMap="ApiTokenResultMap">
         SELECT api_token_id,
                member_id,
                token_name,
@@ -77,11 +81,12 @@
                role,
                department_name,
                expires_at,
+               last_used_at,
                created_at,
                updated_at,
                deleted_at
         FROM api_token
-        WHERE department_name = #{departmentName}
+        WHERE department_name = #{department}
           AND deleted_at IS NULL
         ORDER BY created_at DESC
     </select>
@@ -94,6 +99,7 @@
                role,
                department_name,
                expires_at,
+               last_used_at,
                created_at,
                updated_at,
                deleted_at
@@ -111,6 +117,7 @@
         role,
         department_name,
         expires_at,
+        last_used_at,
         created_at,
         updated_at,
         deleted_at
@@ -132,6 +139,7 @@
                role,
                department_name,
                expires_at,
+               last_used_at,
                created_at,
                updated_at,
                deleted_at
@@ -176,7 +184,7 @@
                 #{tokenName},
                 #{tokenValue},
                 #{role},
-                #{departmentName},
+                #{department},
                 #{expiresAt},
                 #{createdAt},
                 #{updatedAt})
@@ -186,7 +194,7 @@
         UPDATE api_token
         SET token_name      = #{tokenName},
             role            = #{role},
-            department_name = #{departmentName},
+            department_name = #{department},
             expires_at      = #{expiresAt},
             updated_at      = GETDATE()
         WHERE api_token_id = #{apiTokenId}
@@ -217,9 +225,9 @@
           AND deleted_at IS NULL
     </update>
 
-    <update id="updateDepartmentName">
+    <update id="updatedepartment">
         UPDATE api_token
-        SET department_name = #{departmentName},
+        SET department_name = #{department},
             updated_at      = GETDATE()
         WHERE api_token_id = #{apiTokenId}
           AND deleted_at IS NULL
@@ -275,6 +283,7 @@
         role,
         department_name,
         expires_at,
+        last_used_at,
         created_at,
         updated_at,
         deleted_at
@@ -289,8 +298,8 @@
         <if test="role != null and role != ''">
             AND role = #{role}
         </if>
-        <if test="departmentName != null and departmentName != ''">
-            AND department_name = #{departmentName}
+        <if test="department != null and department != ''">
+            AND department_name = #{department}
         </if>
         <if test="isExpired != null">
             <choose>
@@ -342,8 +351,8 @@
         <if test="role != null and role != ''">
             AND role = #{role}
         </if>
-        <if test="departmentName != null and departmentName != ''">
-            AND department_name = #{departmentName}
+        <if test="department != null and department != ''">
+            AND department_name = #{department}
         </if>
         <if test="isExpired != null">
             <choose>

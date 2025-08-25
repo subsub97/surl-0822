@@ -21,12 +21,12 @@ public class ApiToken extends BaseTimeEntity {
 	private String tokenName;
 	private String tokenValue;
 	private Role role;
-	private Department departmentName;
+	private Department department;
 	private LocalDateTime expiresAt;
 	private LocalDateTime lastUsedAt;
 
 	public static ApiToken create(Long memberId, String tokenName, String tokenValue,
-		LocalDateTime expiresAt, Role role, Department departmentName) {
+		LocalDateTime expiresAt, Role role, Department department) {
 
 		return ApiToken.builder()
 			.memberId(memberId)
@@ -34,7 +34,7 @@ public class ApiToken extends BaseTimeEntity {
 			.tokenValue(tokenValue)
 			.expiresAt(expiresAt)
 			.role(role)
-			.departmentName(departmentName)
+			.department(department)
 			.build();
 	}
 

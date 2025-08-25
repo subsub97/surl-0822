@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import com.megastudy.surlkdh.domain.member.entity.Department;
 import com.megastudy.surlkdh.domain.member.entity.Role;
+
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -19,7 +20,7 @@ public class UpdateApiTokenRequest {
 
 	private Role role;
 
-	private Department departmentName;
+	private Department department;
 
 	private LocalDateTime expiresAt;
 }

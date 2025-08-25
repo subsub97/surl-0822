@@ -9,7 +9,7 @@
                type="com.megastudy.surlkdh.domain.shorturl.infrastructure.mybatis.dto.ShortUrlEntity">
         <id property="shortUrlId" column="short_url_id" javaType="java.lang.Long"/>
         <result property="shortCode" column="short_code"/>
-        <result property="departmentName" column="department_name"/>
+        <result property="department" column="department_name"/>
         <result property="creatorId" column="creator_id" javaType="java.lang.Long"/>
         <result property="creatorType" column="creator_type"/>
         <result property="note" column="note"/>
@@ -30,6 +30,20 @@
         </collection>
     </resultMap>
 
+    <resultMap id="shortUrlListResult"
+               type="com.megastudy.surlkdh.domain.shorturl.infrastructure.mybatis.dto.ShortUrlEntity">
+        <id property="shortUrlId" column="short_url_id" javaType="java.lang.Long"/>
+        <result property="shortCode" column="short_code"/>
+        <result property="department" column="department_name"/>
+        <result property="creatorId" column="creator_id" javaType="java.lang.Long"/>
+        <result property="creatorType" column="creator_type"/>
+        <result property="note" column="note"/>
+        <result property="expiresAt" column="expires_at" javaType="java.time.LocalDateTime"/>
+        <result property="createdAt" column="created_at" javaType="java.time.LocalDateTime"/>
+        <result property="updatedAt" column="updated_at" javaType="java.time.LocalDateTime"/>
+        <result property="deletedAt" column="deleted_at" javaType="java.time.LocalDateTime"/>
+    </resultMap>
+
     <insert id="insert" useGeneratedKeys="true" keyProperty="shortUrlId" keyColumn="short_url_id">
         INSERT INTO short_url (
         short_code,
@@ -42,7 +56,7 @@
         expires_at
         ) VALUES (
         #{shortCode},
-        #{departmentName},
+        #{department},
         #{creatorId},
         #{creatorType},
         #{note},
@@ -77,6 +91,72 @@
         AND su.deleted_at IS NULL
     </select>
 
+    <select id="findByShortUrlId" resultMap="shortUrlResult">
+        SELECT
+        su.short_url_id,
+        su.short_code,
+        su.department_name,
+        su.creator_id,
+        su.creator_type,
+        su.note,
+        su.created_at AS su_created_at,
+        su.updated_at AS su_updated_at,
+        su.deleted_at AS su_deleted_at,
+        su.expires_at,
+        surr.redirect_rule_id,
+        surr.short_url_id AS surr_short_url_id,
+        surr.device_type,
+        surr.target_url,
+        surr.created_at AS surr_created_at,
+        surr.updated_at AS surr_updated_at,
+        surr.deleted_at AS surr_deleted_at
+        FROM short_url su
+        LEFT JOIN short_url_redirect_rule surr ON su.short_url_id = surr.short_url_id
+        WHERE su.short_url_id = #{shortUrlId}
+        AND su.deleted_at IS NULL
+    </select>
+
+    <select id="countByDepartment">
+        SELECT
+        COUNT(*)
+        FROM
+        short_url
+        WHERE
+        short_url.department_name = #{department}
+    </select>
+
+    <select id="findByDepartment" resultMap="shortUrlListResult">
+        SELECT
+        short_url_id,
+        short_code,
+        department_name,
+        creator_id,
+        creator_type,
+        note,
+        created_at,
+        updated_at,
+        deleted_at,
+        expires_at
+        FROM
+        short_url
+        WHERE
+        short_url.department_name = #{department}
+
+        <choose>
+            <when test="pageable.sort.isSorted()">
+                ORDER BY
+                <foreach collection="pageable.sort" item="order" separator=",">
+                    ${order.property} ${order.direction}
+                </foreach>
+            </when>
+            <otherwise>
+                ORDER BY short_url_id ASC -- Default order for MSSQL pagination
+            </otherwise>
+        </choose>
+
+        OFFSET #{pageable.offset} ROWS FETCH NEXT #{pageable.pageSize} ROWS ONLY
+    </select>
+
     <insert id="insertRedirectRules">
         INSERT INTO short_url_redirect_rule (
         short_url_id,
@@ -96,4 +176,25 @@
         </foreach>
     </insert>
 
+    <update id="update">
+        UPDATE short_url
+        <set>
+            <if test="shortCode != null and shortCode != ''">short_code = #{shortCode},</if>
+            <if test="note != null">note = #{note},</if>
+            <if test="expiresAt != null">expires_at = #{expiresAt},</if>
+            <if test="department != null and department != ''">department_name = #{department},</if>
+            updated_at = GETDATE()
+        </set>
+        WHERE short_url_id = #{shortUrlId}
+    </update>
+
+    <delete id="deleteRedirectRulesByShortUrlId">
+        DELETE FROM short_url_redirect_rule
+        WHERE short_url_id = #{shortUrlId}
+    </delete>
+
+    <delete id="deleteRedirectRuleById">
+        DELETE FROM short_url_redirect_rule
+        WHERE redirect_rule_id = #{redirectRuleId}
+    </delete>
 </mapper>

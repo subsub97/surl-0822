@@ -21,7 +21,7 @@ public class ApiTokenResponse {
 	private LocalDateTime expiresAt;
 	private LocalDateTime lastUsedAt;
 	private Role role;
-	private Department departmentName;
+	private Department department;
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;
 	private boolean isExpired;
@@ -35,7 +35,7 @@ public class ApiTokenResponse {
 			apiToken.getExpiresAt(),
 			apiToken.getLastUsedAt(),
 			apiToken.getRole(),
-			apiToken.getDepartmentName(),
+			apiToken.getDepartment(),
 			apiToken.getCreatedAt(),
 			apiToken.getUpdatedAt(),
 			apiToken.isExpired()

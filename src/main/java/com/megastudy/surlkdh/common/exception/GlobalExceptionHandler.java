@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import org.apache.ibatis.binding.BindingException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -84,12 +83,6 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<ApiResponse<Void>> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
 		log.error("HttpMessageNotReadableException occurred: {}", ex.getMessage());
 		return buildErrorResponse(CommonErrorCode.BAD_REQUEST, "잘못된 요청 형식입니다.");
-	}
-
-	@ExceptionHandler(BindingException.class)
-	public ResponseEntity<ApiResponse<Void>> handleBindingException(BindingException ex) {
-		log.error("BindException occurred: {}", ex.getMessage());
-		return buildErrorResponse(CommonErrorCode.SERVER_ERROR, "서버 오류가 발생했습니다.");
 	}
 
 	private ResponseEntity<ApiResponse<Void>> buildErrorResponse(ErrorCode errorCode) {

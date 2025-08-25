@@ -4,8 +4,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.megastudy.surlkdh.domain.member.controller.port.MemberService;
-import com.megastudy.surlkdh.domain.member.entity.Member;
 import com.megastudy.surlkdh.domain.member.entity.Department;
+import com.megastudy.surlkdh.domain.member.entity.Member;
 import com.megastudy.surlkdh.domain.member.entity.Role;
 import com.megastudy.surlkdh.domain.member.service.port.MemberRepository;
 
@@ -20,12 +20,12 @@ public class MemberServiceImpl implements MemberService {
 	private final MemberRepository memberRepository;
 
 	@Transactional
-	public void saveMember(String email, String password, Department departmentName, Role role) {
+	public void saveMember(String email, String password, Department department, Role role) {
 
 		Member newMember = Member.from(
 			email,
 			password,
-			departmentName,
+			department,
 			role
 		);
 

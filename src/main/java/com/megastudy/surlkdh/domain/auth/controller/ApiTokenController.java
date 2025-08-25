@@ -43,7 +43,7 @@ public class ApiTokenController {
 		security = @SecurityRequirement(name = "bearerAuth")
 	)
 	@PostMapping
-	@PreAuthorize("hasAuthority('ADMIN') or (hasAuthority('LEADER') and #request.departmentName == authentication.principal.departmentName)")
+	@PreAuthorize("hasAuthority('ADMIN') or (hasAuthority('LEADER') and #request.department == authentication.principal.department)")
 	public ApiResponse<ApiTokenResponse> createApiToken(
 		@AuthenticationPrincipal MemberPrincipal principal,
 		@Valid @RequestBody CreateApiTokenRequest request) {
