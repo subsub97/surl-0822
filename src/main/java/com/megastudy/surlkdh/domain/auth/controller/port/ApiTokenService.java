@@ -3,6 +3,7 @@ package com.megastudy.surlkdh.domain.auth.controller.port;
 import com.megastudy.surlkdh.domain.auth.controller.dto.reqeust.CreateApiTokenRequest;
 import com.megastudy.surlkdh.domain.auth.controller.dto.reqeust.UpdateApiTokenRequest;
 import com.megastudy.surlkdh.domain.auth.controller.dto.response.ApiTokenResponse;
+import com.megastudy.surlkdh.domain.auth.service.dto.AuthenticatedUser;
 import org.springframework.security.core.Authentication;
 
 import java.util.List;
@@ -12,13 +13,13 @@ public interface ApiTokenService {
 
     void updateLastUsedAt(Long apiTokenId);
 
-    ApiTokenResponse createApiToken(CreateApiTokenRequest request, Long creatorMemberId);
+    ApiTokenResponse createApiToken(CreateApiTokenRequest request, AuthenticatedUser user);
 
-    ApiTokenResponse updateApiToken(Long apiTokenId, UpdateApiTokenRequest request, Long creatorMemberId);
+    ApiTokenResponse updateApiToken(Long apiTokenId, UpdateApiTokenRequest request, AuthenticatedUser user);
 
-    ApiTokenResponse getApiToken(Long apiTokenId, Long memberId);
+    ApiTokenResponse getApiToken(Long apiTokenId, AuthenticatedUser user);
 
-    void deleteApiToken(Long apiTokenId, Long memberId);
+    void deleteApiToken(Long apiTokenId, AuthenticatedUser user);
 
     List<ApiTokenResponse> getApiTokensByMember(Long memberId);
 

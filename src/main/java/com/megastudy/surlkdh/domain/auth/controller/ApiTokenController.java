@@ -6,6 +6,7 @@ import com.megastudy.surlkdh.domain.auth.controller.dto.reqeust.CreateApiTokenRe
 import com.megastudy.surlkdh.domain.auth.controller.dto.reqeust.UpdateApiTokenRequest;
 import com.megastudy.surlkdh.domain.auth.controller.dto.response.ApiTokenResponse;
 import com.megastudy.surlkdh.domain.auth.controller.port.ApiTokenService;
+import com.megastudy.surlkdh.domain.auth.service.dto.AuthenticatedUser;
 import com.megastudy.surlkdh.infrastructure.security.MemberPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -40,7 +41,8 @@ public class ApiTokenController {
             @AuthenticationPrincipal MemberPrincipal principal,
             @Valid @RequestBody CreateApiTokenRequest request) {
 
-        ApiTokenResponse response = apiTokenService.createApiToken(request, principal.getId());
+        AuthenticatedUser user = AuthenticatedUser.from(principal);
+        ApiTokenResponse response = apiTokenService.createApiToken(request, user);
         return ApiResponse.created(response);
     }
 
@@ -56,7 +58,8 @@ public class ApiTokenController {
             @AuthenticationPrincipal MemberPrincipal principal,
             @Valid @RequestBody UpdateApiTokenRequest request) {
 
-        ApiTokenResponse response = apiTokenService.updateApiToken(apiTokenId, request, principal.getId());
+        AuthenticatedUser user = AuthenticatedUser.from(principal);
+        ApiTokenResponse response = apiTokenService.updateApiToken(apiTokenId, request, user);
         return ApiResponse.ok(response);
     }
 
@@ -71,7 +74,8 @@ public class ApiTokenController {
             @PathVariable Long apiTokenId,
             @AuthenticationPrincipal MemberPrincipal principal
     ) {
-        apiTokenService.deleteApiToken(apiTokenId, principal.getId());
+        AuthenticatedUser user = AuthenticatedUser.from(principal);
+        apiTokenService.deleteApiToken(apiTokenId, user);
         return ApiResponse.ok(null);
     }
 
@@ -85,7 +89,8 @@ public class ApiTokenController {
     @PreAuthorize("hasAuthority('EMPLOYEE')")
     public ApiResponse<ApiTokenResponse> getApiToken(@PathVariable Long apiTokenId,
                                                      @AuthenticationPrincipal MemberPrincipal principal) {
-        ApiTokenResponse response = apiTokenService.getApiToken(apiTokenId, principal.getId());
+        AuthenticatedUser user = AuthenticatedUser.from(principal);
+        ApiTokenResponse response = apiTokenService.getApiToken(apiTokenId, user);
         return ApiResponse.ok(response);
     }
 
