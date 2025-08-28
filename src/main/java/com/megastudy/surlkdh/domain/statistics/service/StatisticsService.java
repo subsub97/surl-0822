@@ -2,11 +2,11 @@ package com.megastudy.surlkdh.domain.statistics.service;
 
 import com.megastudy.surlkdh.domain.shorturl.entity.ShortUrl;
 import com.megastudy.surlkdh.domain.statistics.controller.dto.request.ShortUrlData;
+import com.megastudy.surlkdh.domain.statistics.service.port.StatisticsQueueRepository;
 import com.megastudy.surlkdh.infrastructure.geoip.GeoIpService;
 import com.megastudy.surlkdh.infrastructure.geoip.dto.GeoIPResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import ua_parser.Client;
@@ -21,9 +21,8 @@ public class StatisticsService {
 
     private final Parser uaParser = new Parser();
     private final GeoIpService geoIpService;
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final StatisticsQueueRepository statisticsQueueRepository;
 
-    private static final String REDIS_STAT_KEY = "shortUrl:stat";
     private static final String LOCALHOST_IP_V4 = "127.0.0.1";
     private static final String LOCALHOST_IP_V6 = "0:0:0:0:0:0:0:1";
     private static final String COUNTRY_LOCAL = "local";
@@ -36,7 +35,7 @@ public class StatisticsService {
     public void collectClickData(ShortUrl shortUrl, String ipAddress, String userAgent, String referrer, String host) {
         try {
             ShortUrlData shortUrlData = createShortUrlDataRequest(shortUrl, ipAddress, userAgent, referrer, host);
-            redisTemplate.opsForList().leftPush(REDIS_STAT_KEY, shortUrlData);
+            statisticsQueueRepository.save(shortUrlData);
         } catch (Exception e) {
             log.error("shortUrl 관련 정보 수집 실패 : {}", shortUrl.getShortCode(), e);
         }
