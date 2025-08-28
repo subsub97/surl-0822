@@ -1,0 +1,47 @@
+spring:
+  application:
+    name: surl-kdh
+
+  datasource:
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  sql:
+    init:
+      mode: always
+
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      username: ${REDIS_USERNAME}
+      password: ${REDIS_PASSWORD}
+
+geoip:
+  mmdb:
+    path: classpath:geoip/ipinfo_lite.mmdb
+
+
+mybatis:
+  mapper-locations: classpath:mybatis/mapper/*.xml
+  type-aliases-package: com.megastudy.surlkdh.domain.member.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    default-fetch-size: 1000
+    default-statement-timeout: 30
+
+logging:
+  level:
+    org.mybatis: DEBUG
+    org.apache.ibatis: DEBUG
+    com.megastudy.surlkdh: DEBUG
+
+jwt:
+  secret: ${JWT_SECRET}
+
+snowflake:
+  epoch: 2025-01-01T00:00:00Z
+  datacenter-id: 1
+  server-id: 1

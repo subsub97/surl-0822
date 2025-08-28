@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.megastudy.surlkdh.domain.auth.infrastructure.mybatis.mapper.ApiTokenMapper">
+
+    <resultMap id="ApiTokenResultMap"
+               type="com.megastudy.surlkdh.domain.auth.infrastructure.mybatis.dto.ApiTokenEntity">
+        <id property="apiTokenId" column="api_token_id"/>
+        <result property="memberId" column="member_id"/>
+        <result property="tokenName" column="token_name"/>
+        <result property="tokenValue" column="token_value"/>
+        <result property="role" column="role"/>
+        <result property="department" column="department_name"/>
+        <result property="expiresAt" column="expires_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+    </resultMap>
+
+    <select id="findByTokenValue" resultMap="ApiTokenResultMap">
+        <![CDATA[
+        SELECT api_token_id,
+               member_id,
+               token_name,
+               token_value,
+               role,
+               department_name,
+               expires_at,
+               created_at,
+               updated_at,
+               deleted_at
+        FROM api_token
+        WHERE token_value = #{tokenValue}
+          AND deleted_at IS NULL
+          AND (expires_at IS NULL OR expires_at > GETDATE())
+        ]]>
+    </select>
+
+    <select id="findById" resultMap="ApiTokenResultMap">
+        SELECT api_token_id,
+               member_id,
+               token_name,
+               token_value,
+               role,
+               department_name,
+               expires_at,
+               created_at,
+               updated_at,
+               deleted_at
+        FROM api_token
+        WHERE api_token_id = #{apiTokenId}
+          AND deleted_at IS NULL
+    </select>
+
+    <select id="findByMemberId" resultMap="ApiTokenResultMap">
+        SELECT api_token_id,
+               member_id,
+               token_name,
+               token_value,
+               role,
+               department_name,
+               expires_at,
+               created_at,
+               updated_at,
+               deleted_at
+        FROM api_token
+        WHERE member_id = #{memberId}
+          AND deleted_at IS NULL
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="findBydepartment" resultMap="ApiTokenResultMap">
+        SELECT api_token_id,
+               member_id,
+               token_name,
+               token_value,
+               role,
+               department_name,
+               expires_at,
+               created_at,
+               updated_at,
+               deleted_at
+        FROM api_token
+        WHERE department_name = #{department}
+          AND deleted_at IS NULL
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="findByRole" resultMap="ApiTokenResultMap">
+        SELECT api_token_id,
+               member_id,
+               token_name,
+               token_value,
+               role,
+               department_name,
+               expires_at,
+               created_at,
+               updated_at,
+               deleted_at
+        FROM api_token
+        WHERE role = #{role}
+          AND deleted_at IS NULL
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="findAll" resultMap="ApiTokenResultMap">
+        SELECT api_token_id,
+        member_id,
+        token_name,
+        token_value,
+        role,
+        department_name,
+        expires_at,
+        created_at,
+        updated_at,
+        deleted_at
+        FROM api_token
+        WHERE deleted_at IS NULL
+        ORDER BY created_at DESC
+        <if test="limit != null and offset != null">
+            OFFSET #{offset} ROWS
+            FETCH NEXT #{limit} ROWS ONLY
+        </if>
+    </select>
+
+    <select id="findExpiredTokens" resultMap="ApiTokenResultMap">
+        <![CDATA[
+        SELECT api_token_id,
+               member_id,
+               token_name,
+               token_value,
+               role,
+               department_name,
+               expires_at,
+               created_at,
+               updated_at,
+               deleted_at
+        FROM api_token
+        WHERE expires_at IS NOT NULL
+          AND expires_at <= GETDATE()
+          AND deleted_at IS NULL
+        ORDER BY expires_at DESC
+        ]]>
+    </select>
+
+    <select id="existsByMemberIdAndTokenName" resultType="boolean">
+        <![CDATA[
+        SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END
+        FROM api_token
+        WHERE member_id = #{memberId}
+        AND token_name = #{tokenName}
+        AND deleted_at IS NULL
+        ]]>
+        <if test="excludeApiTokenId != null">
+            AND api_token_id != #{excludeApiTokenId}
+        </if>
+    </select>
+
+    <select id="countByMemberId" resultType="int">
+        SELECT COUNT(*)
+        FROM api_token
+        WHERE member_id = #{memberId}
+          AND deleted_at IS NULL
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="apiTokenId" keyColumn="api_token_id">
+        INSERT INTO api_token (member_id,
+                               token_name,
+                               token_value,
+                               role,
+                               department_name,
+                               expires_at,
+                               created_at,
+                               updated_at)
+        VALUES (#{memberId},
+                #{tokenName},
+                #{tokenValue},
+                #{role},
+                #{department},
+                #{expiresAt},
+                #{createdAt},
+                #{updatedAt})
+    </insert>
+
+    <update id="update">
+        UPDATE api_token
+        SET token_name      = #{tokenName},
+            role            = #{role},
+            department_name = #{department},
+            expires_at      = #{expiresAt},
+            updated_at      = GETDATE()
+        WHERE api_token_id = #{apiTokenId}
+          AND deleted_at IS NULL
+    </update>
+
+    <update id="updateTokenName">
+        UPDATE api_token
+        SET token_name = #{tokenName},
+            updated_at = GETDATE()
+        WHERE api_token_id = #{apiTokenId}
+          AND deleted_at IS NULL
+    </update>
+
+    <update id="updateExpiresAt">
+        UPDATE api_token
+        SET expires_at = #{expiresAt},
+            updated_at = GETDATE()
+        WHERE api_token_id = #{apiTokenId}
+          AND deleted_at IS NULL
+    </update>
+
+    <update id="updateRole">
+        UPDATE api_token
+        SET role       = #{role},
+            updated_at = GETDATE()
+        WHERE api_token_id = #{apiTokenId}
+          AND deleted_at IS NULL
+    </update>
+
+    <update id="updatedepartment">
+        UPDATE api_token
+        SET department_name = #{department},
+            updated_at      = GETDATE()
+        WHERE api_token_id = #{apiTokenId}
+          AND deleted_at IS NULL
+    </update>
+
+    <update id="deactivateToken">
+        UPDATE api_token
+        SET expires_at = GETDATE(),
+            updated_at = GETDATE()
+        WHERE api_token_id = #{apiTokenId}
+          AND deleted_at IS NULL
+    </update>
+
+    <update id="deleteById">
+        UPDATE api_token
+        SET deleted_at = GETDATE(),
+            updated_at = GETDATE()
+        WHERE api_token_id = #{apiTokenId}
+          AND deleted_at IS NULL
+    </update>
+
+    <update id="deleteByMemberId">
+        UPDATE api_token
+        SET deleted_at = GETDATE(),
+            updated_at = GETDATE()
+        WHERE member_id = #{memberId}
+          AND deleted_at IS NULL
+    </update>
+
+    <update id="deleteExpiredTokens">
+        <![CDATA[
+        UPDATE api_token
+        SET deleted_at = GETDATE(),
+            updated_at = GETDATE()
+        WHERE expires_at IS NOT NULL
+          AND expires_at <= GETDATE()
+          AND deleted_at IS NULL
+        ]]>
+    </update>
+
+    <select id="searchTokens" resultMap="ApiTokenResultMap">
+        SELECT api_token_id,
+        member_id,
+        token_name,
+        token_value,
+        role,
+        department_name,
+        expires_at,
+        created_at,
+        updated_at,
+        deleted_at
+        FROM api_token
+        WHERE deleted_at IS NULL
+        <if test="memberId != null">
+            AND member_id = #{memberId}
+        </if>
+        <if test="tokenName != null and tokenName != ''">
+            AND token_name LIKE '%' + #{tokenName} + '%'
+        </if>
+        <if test="role != null and role != ''">
+            AND role = #{role}
+        </if>
+        <if test="department != null and department != ''">
+            AND department_name = #{department}
+        </if>
+        <if test="isExpired != null">
+            <choose>
+                <when test="isExpired == true">
+                    <![CDATA[ AND expires_at IS NOT NULL AND expires_at <= GETDATE() ]]>
+                </when>
+                <otherwise>
+                    <![CDATA[ AND (expires_at IS NULL OR expires_at > GETDATE()) ]]>
+                </otherwise>
+            </choose>
+        </if>
+        <if test="createdFrom != null">
+            <![CDATA[ AND created_at >= #{createdFrom} ]]>
+        </if>
+        <if test="createdTo != null">
+            <![CDATA[ AND created_at <= #{createdTo} ]]>
+        </if>
+        ORDER BY
+        <choose>
+            <when test="orderBy != null and orderBy == 'name'">
+                token_name
+            </when>
+            <when test="orderBy != null and orderBy == 'expires_at'">
+                expires_at DESC
+            </when>
+            <otherwise>
+                created_at DESC
+            </otherwise>
+        </choose>
+        <if test="limit != null and offset != null">
+            OFFSET #{offset} ROWS
+            FETCH NEXT #{limit} ROWS ONLY
+        </if>
+    </select>
+
+    <select id="countSearchTokens" resultType="int">
+        SELECT COUNT(*)
+        FROM api_token
+        WHERE deleted_at IS NULL
+        <if test="memberId != null">
+            AND member_id = #{memberId}
+        </if>
+        <if test="tokenName != null and tokenName != ''">
+            AND token_name LIKE '%' + #{tokenName} + '%'
+        </if>
+        <if test="role != null and role != ''">
+            AND role = #{role}
+        </if>
+        <if test="department != null and department != ''">
+            AND department_name = #{department}
+        </if>
+        <if test="isExpired != null">
+            <choose>
+                <when test="isExpired == true">
+                    <![CDATA[ AND expires_at IS NOT NULL AND expires_at <= GETDATE() ]]>
+                </when>
+                <otherwise>
+                    <![CDATA[ AND (expires_at IS NULL OR expires_at > GETDATE()) ]]>
+                </otherwise>
+            </choose>
+        </if>
+        <if test="createdFrom != null">
+            <![CDATA[ AND created_at >= #{createdFrom} ]]>
+        </if>
+        <if test="createdTo != null">
+            <![CDATA[ AND created_at <= #{createdTo} ]]>
+        </if>
+    </select>
+
+</mapper>

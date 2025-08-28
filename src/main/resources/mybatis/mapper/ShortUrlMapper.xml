@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.megastudy.surlkdh.domain.shorturl.infrastructure.mybatis.mapper.ShortUrlMapper">
+
+    <resultMap id="shortUrlResult"
+               type="com.megastudy.surlkdh.domain.shorturl.infrastructure.mybatis.dto.ShortUrlEntity">
+        <id property="shortUrlId" column="short_url_id" javaType="java.lang.Long"/>
+        <result property="shortCode" column="short_code"/>
+        <result property="department" column="department_name"/>
+        <result property="creatorId" column="creator_id" javaType="java.lang.Long"/>
+        <result property="creatorType" column="creator_type"/>
+        <result property="note" column="note"/>
+        <result property="pcUrl" column="pc_origin_url"/>
+        <result property="mobileUrl" column="mobile_origin_url"/>
+        <result property="expiresAt" column="expires_at" javaType="java.time.LocalDateTime"/>
+        <result property="createdAt" column="created_at" javaType="java.time.LocalDateTime"/>
+        <result property="updatedAt" column="updated_at" javaType="java.time.LocalDateTime"/>
+        <result property="deletedAt" column="deleted_at" javaType="java.time.LocalDateTime"/>
+
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="shortUrlId" keyColumn="short_url_id">
+        INSERT INTO short_url (
+        short_code,
+        department_name,
+        creator_id,
+        creator_type,
+        note,
+        pc_origin_url,
+        mobile_origin_url,
+        created_at,
+        updated_at,
+        expires_at
+        ) VALUES (
+        #{shortCode},
+        #{department},
+        #{creatorId},
+        #{creatorType},
+        #{note},
+        #{pcUrl},
+        #{mobileUrl},
+        GETDATE(),
+        GETDATE(),
+        #{expiresAt}
+        )
+    </insert>
+
+    <select id="findByShortCode" resultMap="shortUrlResult">
+        SELECT
+        short_url_id,
+        short_code,
+        department_name,
+        creator_id,
+        creator_type,
+        note,
+        pc_origin_url,
+        mobile_origin_url,
+        created_at,
+        updated_at,
+        deleted_at,
+        expires_at
+        FROM short_url
+        WHERE short_code = #{shortCode}
+        AND deleted_at IS NULL
+    </select>
+
+    <select id="findByShortUrlId" resultMap="shortUrlResult">
+        SELECT
+        short_url_id,
+        short_code,
+        department_name,
+        creator_id,
+        creator_type,
+        note,
+        pc_origin_url,
+        mobile_origin_url,
+        created_at,
+        updated_at,
+        deleted_at,
+        expires_at
+        FROM short_url
+        WHERE short_url_id = #{shortUrlId}
+        AND deleted_at IS NULL
+    </select>
+
+    <select id="countByDepartment">
+        SELECT
+        COUNT(*)
+        FROM
+        short_url
+        WHERE
+        short_url.department_name = #{department}
+    </select>
+
+    <select id="findByDepartment" resultMap="shortUrlResult">
+        SELECT
+        short_url_id,
+        short_code,
+        department_name,
+        creator_id,
+        creator_type,
+        note,
+        pc_origin_url,
+        mobile_origin_url,
+        created_at,
+        updated_at,
+        deleted_at,
+        expires_at
+        FROM
+        short_url
+        WHERE
+        short_url.department_name = #{department}
+
+        <choose>
+            <when test="pageable.sort.isSorted()">
+                ORDER BY
+                <foreach collection="pageable.sort" item="order" separator=",">
+                    ${order.property} ${order.direction}
+                </foreach>
+            </when>
+            <otherwise>
+                ORDER BY short_url_id ASC
+            </otherwise>
+        </choose>
+
+        OFFSET #{pageable.offset} ROWS FETCH NEXT #{pageable.pageSize} ROWS ONLY
+    </select>
+
+    <select id="findPcUrlByShortCode">
+        SELECT pc_origin_url
+        FROM short_url
+        WHERE short_url.short_code = #{shortCode}
+    </select>
+
+    <select id="findMobileUrlByShortCode">
+        SELECT pc_origin_url
+        FROM short_url
+        WHERE short_url.short_code = #{shortCode}
+    </select>
+
+    <update id="update">
+        UPDATE short_url
+        <set>
+            <if test="shortCode != null and shortCode != ''">short_code = #{shortCode},</if>
+            <if test="note != null">note = #{note},</if>
+            <if test="expiresAt != null">expires_at = #{expiresAt},</if>
+            <if test="department != null and department != ''">department_name = #{department},</if>
+            <if test="deletedAt != null ">deleted_at = #{deletedAt},</if>
+            <if test="pcUrl != null ">pc_origin_url = #{pcUrl},</if>
+            <if test="mobileUrl != null ">mobile_origin_url = #{mobileUrl},</if>
+            updated_at = GETDATE()
+        </set>
+        WHERE short_url_id = #{shortUrlId}
+    </update>
+
+    <update id="deleteShortUrlById">
+        UPDATE short_url
+        SET
+        deleted_at = GETDATE()
+        WHERE
+        short_url_id = #{shortUrlID}
+    </update>
+</mapper>
