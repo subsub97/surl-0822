@@ -1,6 +1,6 @@
 package com.megastudy.surlkdh.domain.statistics.infrastructure.mybatis.dto;
 
-import com.megastudy.surlkdh.domain.statistics.controller.dto.request.ShortUrlData;
+import com.megastudy.surlkdh.domain.statistics.scheduler.dto.request.ShortUrlData;
 import lombok.*;
 
 import java.time.LocalDateTime;

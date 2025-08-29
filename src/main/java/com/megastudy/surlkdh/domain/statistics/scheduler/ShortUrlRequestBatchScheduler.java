@@ -1,8 +1,8 @@
 package com.megastudy.surlkdh.domain.statistics.scheduler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.megastudy.surlkdh.domain.statistics.controller.dto.request.ShortUrlData;
-import com.megastudy.surlkdh.domain.statistics.controller.shortUrlStatisticsService;
+import com.megastudy.surlkdh.domain.statistics.scheduler.dto.request.ShortUrlData;
+import com.megastudy.surlkdh.domain.statistics.service.StatisticsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.RedisConnection;
@@ -22,15 +22,15 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ShortUrlRequestBatchScheduler {
 
-    private final RedisTemplate<String, Object> redisTemplate;
-    private final ObjectMapper objectMapper;
-
     private static final int BATCH_SIZE = 1000;
     private static final long ONE_MIN = 1000 * 60L; // 1분
     private static final String REDIS_STAT_KEY = "shortUrl:stat";
     private static final String FAILED_BATCH_PREFIX = "batch:jobs:failed:";
     private static final Duration FAILED_BATCH_TTL = Duration.ofDays(5); // 실패 배치 데이터 보관 기간
-    private final shortUrlStatisticsService shortUrlStatisticsService;
+
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final ObjectMapper objectMapper;
+    private final StatisticsService statisticsService;
 
     @Scheduled(fixedRate = ONE_MIN)
     public void aggregateShortUrlRequests() {
@@ -118,7 +118,7 @@ public class ShortUrlRequestBatchScheduler {
                 return true; // 빈 배치는 성공으로 간주
             }
 
-            boolean result = shortUrlStatisticsService.processBatch(batch);
+            boolean result = statisticsService.processBatch(batch);
 
             if (result) {
                 log.debug("Batch {} processed successfully with {} items", batchTime, batch.size());

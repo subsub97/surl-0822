@@ -1,4 +1,4 @@
-package com.megastudy.surlkdh.domain.statistics.controller.dto.request;
+package com.megastudy.surlkdh.domain.statistics.scheduler.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

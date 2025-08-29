@@ -1,7 +1,7 @@
 package com.megastudy.surlkdh.domain.audit.aop;
 
 import com.megastudy.surlkdh.domain.audit.entity.Audit;
-import com.megastudy.surlkdh.domain.audit.service.AuditRepository;
+import com.megastudy.surlkdh.domain.audit.service.AuditLogService;
 import com.megastudy.surlkdh.domain.member.entity.Role;
 import com.megastudy.surlkdh.infrastructure.security.MemberPrincipal;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,7 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class AuditLogAop {
 
-    private final AuditRepository auditRepository;
+    private final AuditLogService auditLogService;
     private final AuditContext auditContext;
 
     @Around("@annotation(auditLog)")
@@ -83,7 +83,7 @@ public class AuditLogAop {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        auditRepository.save(audit);
+        auditLogService.saveAsync(audit);
     }
 
     private boolean isAdminUser(Role role) {

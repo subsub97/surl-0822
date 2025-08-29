@@ -1,11 +1,16 @@
 package com.megastudy.surlkdh.domain.statistics.service;
 
 import com.megastudy.surlkdh.domain.shorturl.entity.ShortUrl;
-import com.megastudy.surlkdh.domain.statistics.controller.dto.request.ShortUrlData;
+import com.megastudy.surlkdh.domain.statistics.controller.dto.request.StatisticRequest;
+import com.megastudy.surlkdh.domain.statistics.controller.dto.response.StatisticsDataPoint;
+import com.megastudy.surlkdh.domain.statistics.infrastructure.ShortUrlStatisticsRepositoryImpl;
+import com.megastudy.surlkdh.domain.statistics.scheduler.dto.request.ShortUrlData;
 import com.megastudy.surlkdh.infrastructure.geoip.GeoIpService;
 import com.megastudy.surlkdh.infrastructure.geoip.dto.GeoIPResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -13,15 +18,12 @@ import ua_parser.Client;
 import ua_parser.Parser;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class StatisticsService {
-
-    private final Parser uaParser = new Parser();
-    private final GeoIpService geoIpService;
-    private final RedisTemplate<String, Object> redisTemplate;
 
     private static final String REDIS_STAT_KEY = "shortUrl:stat";
     private static final String LOCALHOST_IP_V4 = "127.0.0.1";
@@ -31,6 +33,10 @@ public class StatisticsService {
     private static final String PLATFORM_UNKNOWN = "unknown";
     private static final String REFERRER_DIRECT = "direct";
 
+    private final Parser uaParser = new Parser();
+    private final GeoIpService geoIpService;
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final ShortUrlStatisticsRepositoryImpl shortUrlStatisticsRepository;
 
     @Async("shortUrlDataExecutor")
     public void collectClickData(ShortUrl shortUrl, String ipAddress, String userAgent, String referrer, String host) {
@@ -40,6 +46,16 @@ public class StatisticsService {
         } catch (Exception e) {
             log.error("shortUrl 관련 정보 수집 실패 : {}", shortUrl.getShortCode(), e);
         }
+    }
+
+    public boolean processBatch(List<ShortUrlData> batch) {
+        log.info("Processing {} statistics records", batch.size());
+        shortUrlStatisticsRepository.processBatch(batch);
+        return true;
+    }
+
+    public Page<StatisticsDataPoint> getGroupByStatistics(StatisticRequest request, Pageable pageable) {
+        return shortUrlStatisticsRepository.getGroupByStatistics(request, pageable);
     }
 
     private ShortUrlData createShortUrlDataRequest(ShortUrl shortUrl, String ipAddress, String userAgent, String referrer, String host) {

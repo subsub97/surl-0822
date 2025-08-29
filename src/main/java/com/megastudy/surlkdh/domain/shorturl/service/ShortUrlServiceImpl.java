@@ -109,8 +109,10 @@ public class ShortUrlServiceImpl implements ShortUrlService {
         log.debug("단축 URL {} 현재 정보: shortCode={}, note={}, expiresAt={}, department={}",
                 shortUrlId, shortUrl.getShortCode(), shortUrl.getNote(), shortUrl.getExpiresAt(), shortUrl.getDepartment());
 
-        if (request.getShortCode() != null) {
+        String oldShortCode = shortUrl.getShortCode();
+        boolean isShortCodeChanged = request.getShortCode() != null && !request.getShortCode().equals(oldShortCode);
 
+        if (isShortCodeChanged) {
             Function<String, Boolean> isShortCodeAvailable = this::isAvailable;
             shortUrl.changeShortCode(request.getShortCode(), isShortCodeAvailable);
         }
@@ -137,6 +139,10 @@ public class ShortUrlServiceImpl implements ShortUrlService {
 
         ShortUrl updatedShortUrl = shortUrlRepository.save(shortUrl);
         log.info("단축 URL {} 업데이트 성공.", shortUrlId);
+
+        if (isShortCodeChanged) {
+            shortUrlRepository.evictCache(oldShortCode);
+        }
 
         auditContext.setResourceId(updatedShortUrl.getShortUrlId());
 
@@ -197,7 +203,7 @@ public class ShortUrlServiceImpl implements ShortUrlService {
         //디바이스에 따라서 원본 URL 조회하기
         RedirectUrlStrategy redirectStrategy = redirectStrategyFactory.getRedirectStrategy(deviceType);
 
-        return redirectStrategy.findRedirectUrl(shortCode);
+        return redirectStrategy.findRedirectUrl(shortUrl);
     }
 
     private String generateRandomCode() {

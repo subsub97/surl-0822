@@ -19,7 +19,6 @@
         <result property="createdAt" column="created_at" javaType="java.time.LocalDateTime"/>
         <result property="updatedAt" column="updated_at" javaType="java.time.LocalDateTime"/>
         <result property="deletedAt" column="deleted_at" javaType="java.time.LocalDateTime"/>
-
     </resultMap>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="shortUrlId" keyColumn="short_url_id">
@@ -162,5 +161,13 @@
         deleted_at = GETDATE()
         WHERE
         short_url_id = #{shortUrlID}
+    </update>
+
+    <update id="deleteByShortCode">
+        UPDATE short_url
+        SET
+        deleted_at = GETDATE()
+        WHERE
+        short_code = #{shortCode}
     </update>
 </mapper>
