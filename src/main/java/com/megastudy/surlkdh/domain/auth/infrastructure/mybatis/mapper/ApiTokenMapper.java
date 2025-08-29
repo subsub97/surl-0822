@@ -1,29 +1,35 @@
 package com.megastudy.surlkdh.domain.auth.infrastructure.mybatis.mapper;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
+import com.megastudy.surlkdh.domain.auth.infrastructure.mybatis.dto.ApiTokenEntity;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.springframework.data.domain.Pageable;
 
-import com.megastudy.surlkdh.domain.auth.infrastructure.mybatis.dto.ApiTokenEntity;
+import java.util.List;
 
 @Mapper
 public interface ApiTokenMapper {
 
-	ApiTokenEntity findByTokenValue(@Param("tokenValue") String tokenValue);
+    ApiTokenEntity findByTokenValue(@Param("tokenValue") String tokenValue);
 
-	void updateLastUsedAt(@Param("apiTokenId") Long apiTokenId, @Param("lastUsedAt") LocalDateTime lastUsedAt);
+    void insert(ApiTokenEntity apiTokenEntity);
 
-	void insert(ApiTokenEntity apiTokenEntity);
+    ApiTokenEntity findById(@Param("apiTokenId") Long apiTokenId);
 
-	ApiTokenEntity findById(@Param("apiTokenId") Long apiTokenId);
+    List<ApiTokenEntity> findByMemberId(@Param("memberId") Long memberId, Pageable pageable);
 
-	List<ApiTokenEntity> findByMemberId(@Param("memberId") Long memberId);
+    List<ApiTokenEntity> findAll(@Param("pageable") Pageable pageable);
 
-	List<ApiTokenEntity> findAll();
+    void update(ApiTokenEntity apiTokenEntity);
 
-	void update(ApiTokenEntity apiTokenEntity);
+    void deleteById(@Param("apiTokenId") Long apiTokenId);
 
-	void deleteById(@Param("apiTokenId") Long apiTokenId);
+    Long countByDepartment(String department);
+
+    List<ApiTokenEntity> findByDepartment(String department, Pageable pageable);
+
+    Long countAll();
+
+    Long countByMemberId(Long memberId);
+
 }

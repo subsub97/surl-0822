@@ -54,19 +54,31 @@
 
     <select id="findByMemberId" resultMap="ApiTokenResultMap">
         SELECT api_token_id,
-               member_id,
-               token_name,
-               token_value,
-               role,
-               department_name,
-               expires_at,
-               created_at,
-               updated_at,
-               deleted_at
+        member_id,
+        token_name,
+        token_value,
+        role,
+        department_name,
+        expires_at,
+        created_at,
+        updated_at,
+        deleted_at
         FROM api_token
         WHERE member_id = #{memberId}
-          AND deleted_at IS NULL
-        ORDER BY created_at DESC
+        AND deleted_at IS NULL
+
+        <choose>
+            <when test="pageable.sort.isSorted()">
+                ORDER BY
+                <foreach collection="pageable.sort" item="order" separator=",">
+                    ${order.property} ${order.direction}
+                </foreach>
+            </when>
+            <otherwise>
+                ORDER BY api_token_id ASC
+            </otherwise>
+        </choose>
+        OFFSET #{pageable.offset} ROWS FETCH NEXT #{pageable.pageSize} ROWS ONLY
     </select>
 
     <select id="findBydepartment" resultMap="ApiTokenResultMap">
@@ -116,11 +128,19 @@
         deleted_at
         FROM api_token
         WHERE deleted_at IS NULL
-        ORDER BY created_at DESC
-        <if test="limit != null and offset != null">
-            OFFSET #{offset} ROWS
-            FETCH NEXT #{limit} ROWS ONLY
-        </if>
+
+        <choose>
+            <when test="pageable.sort.isSorted()">
+                ORDER BY
+                <foreach collection="pageable.sort" item="order" separator=",">
+                    ${order.property} ${order.direction}
+                </foreach>
+            </when>
+            <otherwise>
+                ORDER BY api_token_id ASC
+            </otherwise>
+        </choose>
+        OFFSET #{pageable.offset} ROWS FETCH NEXT #{pageable.pageSize} ROWS ONLY
     </select>
 
     <select id="findExpiredTokens" resultMap="ApiTokenResultMap">
@@ -156,11 +176,17 @@
         </if>
     </select>
 
-    <select id="countByMemberId" resultType="int">
+    <select id="countByMemberId" resultType="long">
         SELECT COUNT(*)
         FROM api_token
         WHERE member_id = #{memberId}
           AND deleted_at IS NULL
+    </select>
+
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*)
+        FROM api_token
+        WHERE deleted_at IS NULL
     </select>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="apiTokenId" keyColumn="api_token_id">
@@ -351,6 +377,42 @@
         <if test="createdTo != null">
             <![CDATA[ AND created_at <= #{createdTo} ]]>
         </if>
+    </select>
+
+    <select id="countByDepartment">
+        SELECT COUNT(*)
+        FROM api_token
+        WHERE department_name = #{department}
+          AND deleted_at IS NULL
+    </select>
+
+    <select id="findByDepartment" resultMap="ApiTokenResultMap">
+        SELECT api_token_id,
+        member_id,
+        token_name,
+        token_value,
+        role,
+        department_name,
+        expires_at,
+        created_at,
+        updated_at,
+        deleted_at
+        FROM api_token
+        WHERE department_name = #{department}
+        AND deleted_at IS NULL
+
+        <choose>
+            <when test="pageable.sort.isSorted()">
+                ORDER BY
+                <foreach collection="pageable.sort" item="order" separator=",">
+                    ${order.property} ${order.direction}
+                </foreach>
+            </when>
+            <otherwise>
+                ORDER BY api_token_id ASC
+            </otherwise>
+        </choose>
+        OFFSET #{pageable.offset} ROWS FETCH NEXT #{pageable.pageSize} ROWS ONLY
     </select>
 
 </mapper>

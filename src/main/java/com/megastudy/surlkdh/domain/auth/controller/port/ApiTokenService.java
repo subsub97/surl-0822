@@ -3,26 +3,28 @@ package com.megastudy.surlkdh.domain.auth.controller.port;
 import com.megastudy.surlkdh.domain.auth.controller.dto.reqeust.CreateApiTokenRequest;
 import com.megastudy.surlkdh.domain.auth.controller.dto.reqeust.UpdateApiTokenRequest;
 import com.megastudy.surlkdh.domain.auth.controller.dto.response.ApiTokenResponse;
+import com.megastudy.surlkdh.domain.auth.service.dto.AuthenticatedMember;
+import com.megastudy.surlkdh.domain.member.entity.Department;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
-
-import java.util.List;
 
 public interface ApiTokenService {
     ApiTokenResponse findByTokenValue(String tokenValue);
 
-    void updateLastUsedAt(Long apiTokenId);
+    ApiTokenResponse createApiToken(CreateApiTokenRequest request, AuthenticatedMember authenticatedMember);
 
-    ApiTokenResponse createApiToken(CreateApiTokenRequest request, Long creatorMemberId);
+    ApiTokenResponse updateApiToken(Long apiTokenId, UpdateApiTokenRequest request, AuthenticatedMember authenticatedMember);
 
-    ApiTokenResponse updateApiToken(Long apiTokenId, UpdateApiTokenRequest request, Long creatorMemberId);
+    ApiTokenResponse getApiToken(Long apiTokenId, AuthenticatedMember authenticatedMember);
 
-    ApiTokenResponse getApiToken(Long apiTokenId, Long memberId);
+    void deleteApiToken(Long apiTokenId, AuthenticatedMember authenticatedMember);
 
-    void deleteApiToken(Long apiTokenId, Long memberId);
+    Page<ApiTokenResponse> getApiTokensByMember(Long memberId, Pageable pageable);
 
-    List<ApiTokenResponse> getApiTokensByMember(Long memberId);
-
-    List<ApiTokenResponse> getAllApiTokens(); //ADMIN 전용
+    Page<ApiTokenResponse> getAllApiTokens(Pageable pageable); //ADMIN 전용
 
     Authentication getAuthentication(String apiTokenValue);
+
+    Page<ApiTokenResponse> getApiTokensByDepartment(Department department, Pageable pageable);
 }

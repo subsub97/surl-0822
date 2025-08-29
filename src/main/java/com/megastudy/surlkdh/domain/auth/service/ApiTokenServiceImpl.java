@@ -8,14 +8,16 @@ import com.megastudy.surlkdh.domain.auth.controller.dto.reqeust.UpdateApiTokenRe
 import com.megastudy.surlkdh.domain.auth.controller.dto.response.ApiTokenResponse;
 import com.megastudy.surlkdh.domain.auth.controller.port.ApiTokenService;
 import com.megastudy.surlkdh.domain.auth.entity.ApiToken;
+import com.megastudy.surlkdh.domain.auth.service.dto.AuthenticatedMember;
 import com.megastudy.surlkdh.domain.auth.service.port.ApiTokenRepository;
-import com.megastudy.surlkdh.domain.member.entity.Member;
+import com.megastudy.surlkdh.domain.member.entity.Department;
 import com.megastudy.surlkdh.domain.member.entity.Role;
-import com.megastudy.surlkdh.domain.member.service.port.MemberRepository;
 import com.megastudy.surlkdh.infrastructure.security.MemberPrincipal;
 import com.megastudy.surlkdh.infrastructure.security.jwt.exception.TokenErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -28,11 +30,9 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.megastudy.surlkdh.domain.auth.entity.UserType.API_TOKEN;
 
@@ -42,7 +42,6 @@ import static com.megastudy.surlkdh.domain.auth.entity.UserType.API_TOKEN;
 @Slf4j
 public class ApiTokenServiceImpl implements ApiTokenService {
     private final ApiTokenRepository apiTokenRepository;
-    private final MemberRepository memberRepository;
     private final RoleHierarchy roleHierarchy;
     private final AuditContext auditContext;
     private final SecureRandom secureRandom = new SecureRandom();
@@ -61,29 +60,16 @@ public class ApiTokenServiceImpl implements ApiTokenService {
 
     @Override
     @Transactional
-    public void updateLastUsedAt(Long apiTokenId) {
-        auditContext.setResourceId(apiTokenId);
-        log.info("Updating last used time for ApiToken id: {}", apiTokenId);
-        apiTokenRepository.updateLastUsedAt(apiTokenId, LocalDateTime.now());
-    }
+    public ApiTokenResponse createApiToken(CreateApiTokenRequest request, AuthenticatedMember member) {
+        log.info("Attempting to create ApiToken by memberId: {}", member.getId());
 
-    @Override
-    @Transactional
-    public ApiTokenResponse createApiToken(CreateApiTokenRequest request, Long creatorMemberId) {
-        log.info("Attempting to create ApiToken by memberId: {}", creatorMemberId);
-        Member creator = memberRepository.findById(creatorMemberId)
-                .orElseThrow(() -> {
-                    log.error("Creator member not found for id: {}", creatorMemberId);
-                    return new BusinessException(CommonErrorCode.BAD_REQUEST);
-                });
-
-        validateRoleAssignment(request, creator);
+        validateRoleAssignment(request, member);
 
         String rawToken = generateRawToken();
         String hashedToken = hashToken(rawToken);
 
         ApiToken apiToken = ApiToken.create(
-                creatorMemberId,
+                member.getId(),
                 request.getTokenName(),
                 hashedToken,
                 request.getExpiresAt(),
@@ -92,7 +78,7 @@ public class ApiTokenServiceImpl implements ApiTokenService {
         );
 
         ApiToken savedToken = apiTokenRepository.save(apiToken);
-        log.info("Successfully created ApiToken id: {} for memberId: {}", savedToken.getApiTokenId(), creatorMemberId);
+        log.info("Successfully created ApiToken id: {} for memberId: {}", savedToken.getApiTokenId(), member.getId());
 
         auditContext.setResourceId(savedToken.getApiTokenId());
 
@@ -102,7 +88,6 @@ public class ApiTokenServiceImpl implements ApiTokenService {
                 .tokenName(savedToken.getTokenName())
                 .tokenValue(hashedToken)
                 .expiresAt(savedToken.getExpiresAt())
-                .lastUsedAt(savedToken.getLastUsedAt())
                 .role(savedToken.getRole())
                 .department(savedToken.getDepartment())
                 .createdAt(savedToken.getCreatedAt())
@@ -115,18 +100,12 @@ public class ApiTokenServiceImpl implements ApiTokenService {
 
     @Override
     @Transactional
-    public ApiTokenResponse updateApiToken(Long apiTokenId, UpdateApiTokenRequest request, Long memberId) {
-        log.info("Attempting to update ApiToken id: {} by memberId: {}", apiTokenId, memberId);
+    public ApiTokenResponse updateApiToken(Long apiTokenId, UpdateApiTokenRequest request, AuthenticatedMember member) {
+        log.info("Attempting to update ApiToken id: {} by memberId: {}", apiTokenId, member.getId());
         auditContext.setResourceId(apiTokenId);
         ApiToken apiToken = apiTokenRepository.findById(apiTokenId)
                 .orElseThrow(() -> {
                     log.error("ApiToken not found for id: {}", apiTokenId);
-                    return new BusinessException(CommonErrorCode.BAD_REQUEST);
-                });
-
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> {
-                    log.error("Member not found for id: {}", memberId);
                     return new BusinessException(CommonErrorCode.BAD_REQUEST);
                 });
 
@@ -138,10 +117,9 @@ public class ApiTokenServiceImpl implements ApiTokenService {
                 .tokenName(request.getTokenName() != null ? request.getTokenName() : apiToken.getTokenName())
                 .tokenValue(apiToken.getTokenValue())
                 .expiresAt(request.getExpiresAt() != null ? request.getExpiresAt() : apiToken.getExpiresAt())
-                .lastUsedAt(apiToken.getLastUsedAt())
                 .role(request.getRole() != null ? request.getRole() : apiToken.getRole())
                 .department(request.getDepartment() != null ? request.getDepartment() :
-                        apiToken.getDepartment()) // Added
+                        apiToken.getDepartment())
                 .createdAt(apiToken.getCreatedAt())
                 .updatedAt(apiToken.getUpdatedAt())
                 .deletedAt(apiToken.getDeletedAt())
@@ -153,18 +131,12 @@ public class ApiTokenServiceImpl implements ApiTokenService {
     }
 
     @Override
-    public ApiTokenResponse getApiToken(Long apiTokenId, Long memberId) {
+    public ApiTokenResponse getApiToken(Long apiTokenId, AuthenticatedMember member) {
         log.info("Fetching ApiToken id: {}", apiTokenId);
         auditContext.setResourceId(apiTokenId);
         ApiToken apiToken = apiTokenRepository.findById(apiTokenId)
                 .orElseThrow(() -> {
                     log.error("ApiToken not found for id: {}", apiTokenId);
-                    return new BusinessException(CommonErrorCode.BAD_REQUEST);
-                });
-
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> {
-                    log.error("Member not found for id: {}", memberId);
                     return new BusinessException(CommonErrorCode.BAD_REQUEST);
                 });
 
@@ -174,18 +146,12 @@ public class ApiTokenServiceImpl implements ApiTokenService {
     }
 
     @Override
-    public void deleteApiToken(Long apiTokenId, Long memberId) {
-        log.info("Attempting to delete ApiToken id: {} by memberId: {}", apiTokenId, memberId);
+    public void deleteApiToken(Long apiTokenId, AuthenticatedMember member) {
+        log.info("Attempting to delete ApiToken id: {} by memberId: {}", apiTokenId, member.getId());
         auditContext.setResourceId(apiTokenId);
         ApiToken apiToken = apiTokenRepository.findById(apiTokenId)
                 .orElseThrow(() -> {
                     log.error("ApiToken not found for id: {}", apiTokenId);
-                    return new BusinessException(CommonErrorCode.BAD_REQUEST);
-                });
-
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> {
-                    log.error("Member not found for id: {}", memberId);
                     return new BusinessException(CommonErrorCode.BAD_REQUEST);
                 });
 
@@ -196,21 +162,23 @@ public class ApiTokenServiceImpl implements ApiTokenService {
     }
 
     @Override
-    public List<ApiTokenResponse> getApiTokensByMember(Long memberId) {
+    public Page<ApiTokenResponse> getApiTokensByMember(Long memberId, Pageable pageable) {
         log.info("Fetching all ApiTokens for memberId: {}", memberId);
-        List<ApiToken> tokens = apiTokenRepository.findByMemberId(memberId);
-        return tokens.stream()
-                .map(token -> ApiTokenResponse.of(token, false))
-                .collect(Collectors.toList());
+        Page<ApiToken> apiTokensPages = apiTokenRepository.findByMemberId(memberId, pageable);
+        return apiTokensPages.map(tokens -> ApiTokenResponse.of(tokens, false));
     }
 
     @Override
-    public List<ApiTokenResponse> getAllApiTokens() {
+    public Page<ApiTokenResponse> getAllApiTokens(Pageable pageable) {
         log.info("Fetching all ApiTokens");
-        List<ApiToken> tokens = apiTokenRepository.findAll();
-        return tokens.stream()
-                .map(token -> ApiTokenResponse.of(token, false))
-                .collect(Collectors.toList());
+        Page<ApiToken> apiTokensPages = apiTokenRepository.findAll(pageable);
+        return apiTokensPages.map(tokens -> ApiTokenResponse.of(tokens, false));
+    }
+
+    @Override
+    public Page<ApiTokenResponse> getApiTokensByDepartment(Department department, Pageable pageable) {
+        Page<ApiToken> apiTokensPages = apiTokenRepository.findByDepartment(department, pageable);
+        return apiTokensPages.map(tokens -> ApiTokenResponse.of(tokens, false));
     }
 
     @Override
@@ -233,13 +201,9 @@ public class ApiTokenServiceImpl implements ApiTokenService {
         return new UsernamePasswordAuthenticationToken(memberPrincipal, apiTokenValue, authorities);
     }
 
-    private void validateRoleAssignment(CreateApiTokenRequest request, Member creator) {
-        Collection<GrantedAuthority> creatorAuthorities = List.of(
-                new SimpleGrantedAuthority(creator.getRole().getKey())
-        );
-
-        Collection<? extends GrantedAuthority> reachableGrantedAuthorities = roleHierarchy.getReachableGrantedAuthorities(
-                creatorAuthorities);
+    private void validateRoleAssignment(CreateApiTokenRequest request, AuthenticatedMember member) {
+        Collection<? extends GrantedAuthority> reachableGrantedAuthorities =
+                roleHierarchy.getReachableGrantedAuthorities(member.getAuthorities());
 
         GrantedAuthority targetAuthority = new SimpleGrantedAuthority(request.getRole().getKey());
 
@@ -249,19 +213,25 @@ public class ApiTokenServiceImpl implements ApiTokenService {
         }
     }
 
-    private void validateUpdatePermissions(ApiToken apiToken, Member member) {
-        if (member.getRole() == Role.ADMIN) {
+    private void validateUpdatePermissions(ApiToken apiToken, AuthenticatedMember member) {
+        boolean isAdmin = member.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals(Role.ADMIN.getKey()));
+
+        if (isAdmin) {
             return;
         }
-        if (!apiToken.getMemberId().equals(member.getMemberId())) {
-            log.error("본인이 생성한 토큰만 수정할 수 있습니다. 요청한 멤버 ID: {}, 토큰 소유자 ID: {}", member.getMemberId(),
+        if (!apiToken.getMemberId().equals(member.getId())) {
+            log.error("본인이 생성한 토큰만 수정할 수 있습니다. 요청한 멤버 ID: {}, 토큰 소유자 ID: {}", member.getId(),
                     apiToken.getMemberId());
             throw new BusinessException(CommonErrorCode.FORBIDDEN_UPDATE);
         }
     }
 
-    private void validateAccessPermissions(ApiToken apiToken, Member member) {
-        if (member.getRole() == Role.ADMIN) {
+    private void validateAccessPermissions(ApiToken apiToken, AuthenticatedMember member) {
+        boolean isAdmin = member.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals(Role.ADMIN.getKey()));
+
+        if (isAdmin) {
             return;
         }
         if (!apiToken.getDepartment().equals(member.getDepartment())) {
