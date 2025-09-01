@@ -47,9 +47,9 @@ public class AsyncBatchProcessor {
 			boolean success = processBatchData(batch, jobIdentifier);
 
 			if (!success) {
-				saveFailedBatch(batch, jobIdentifier);
-				log.warn("Batch processing failed for [{}]. Stopping this thread. Size: {}", jobIdentifier,
-					batch.size());
+				String failedKey = saveFailedBatch(batch, jobIdentifier);
+				log.warn("Batch processing failed for [{}]. Stopping this thread. Size: {}, Saved to: {}", 
+					jobIdentifier, batch.size(), failedKey);
 				break;
 			}
 		}
@@ -115,10 +115,9 @@ public class AsyncBatchProcessor {
 		}
 	}
 
-	private void saveFailedBatch(List<ShortUrlData> failedBatch, String batchTime) {
+	private String saveFailedBatch(List<ShortUrlData> failedBatch, String batchTime) {
+		String failedKey = FAILED_BATCH_PREFIX + batchTime;
 		try {
-			String failedKey = FAILED_BATCH_PREFIX + batchTime;
-
 			redisTemplate.opsForList().leftPushAll(failedKey, failedBatch.toArray());
 
 			redisTemplate.expire(failedKey, FAILED_BATCH_TTL);
@@ -126,70 +125,179 @@ public class AsyncBatchProcessor {
 			log.info("Failed batch saved: {} with {} items, TTL: {} days",
 				failedKey, failedBatch.size(), FAILED_BATCH_TTL.toDays());
 
+			return failedKey;
 		} catch (Exception e) {
 			log.error("Error saving failed batch {}", batchTime, e);
+			return null;
 		}
 	}
 
-	//TODO 수동으로 재처리할 수 있도록 api 만들기 + 정상 작동 테스트
-	public void retryFailedBatch(String batchTime) {
+	/**
+	 * 실패한 배치를 청크 단위로 재시도 처리
+	 * - 청크별로 독립적 처리하여 부분 성공 가능
+	 * - 성공한 청크는 즉시 Redis에서 제거
+	 * - 실패한 청크만 재저장하여 데이터 손실 방지
+	 */
+	public RetryResult retryFailedBatch(String batchTime) {
 		String failedKey = FAILED_BATCH_PREFIX + batchTime;
-
+		RetryResult result = new RetryResult();
+		
 		try {
-			// 실패한 배치가 존재하는지 확인
-			Long size = redisTemplate.opsForList().size(failedKey);
+			Long totalSize = redisTemplate.opsForList().size(failedKey);
 
-			if (size == null || size == 0) {
+			if (totalSize == null || totalSize == 0) {
 				log.warn("Failed batch not found: {}", failedKey);
-				return;
+				result.setStatus("NOT_FOUND");
+				return result;
 			}
 
-			// 모든 데이터 가져오기
-			List<Object> failedJsonData = redisTemplate.opsForList().range(failedKey, 0, -1);
+			log.info("Starting retry for failed batch {} with {} items", failedKey, totalSize);
+			
+			int processedCount = 0;
+			int successfulChunks = 0;
+			int failedChunks = 0;
+			List<String> failedChunkKeys = new ArrayList<>();
 
-			if (failedJsonData != null && !failedJsonData.isEmpty()) {
-				List<ShortUrlData> failedData = failedJsonData.stream()
-					.map(json -> {
-						try {
-							return objectMapper.convertValue(json, ShortUrlData.class);
-						} catch (Exception e) {
-							log.error("Error converting ShortUrlData during retry: {}", e.getMessage(), e);
-							return null;
-						}
-					})
-					.filter(obj -> obj != null)
-					.toList();
-				int totalChunks = (int)Math.ceil((double)failedData.size() / BATCH_SIZE);
-
-				boolean allSuccess = true;
-				for (int i = 0; i < failedData.size(); i += BATCH_SIZE) {
-					int endIdx = Math.min(i + BATCH_SIZE, failedData.size());
-					List<ShortUrlData> chunk = failedData.subList(i, endIdx);
-					int chunkNumber = (i / BATCH_SIZE) + 1;
-
-					log.info("Processing chunk {}/{} with {} items for batch {}",
-						chunkNumber, totalChunks, chunk.size(), failedKey);
-
-					boolean chunkSuccess = processBatchData(chunk, batchTime + "_retry_chunk_" + chunkNumber);
-
-					if (!chunkSuccess) {
-						log.error("Failed to process chunk {}/{} for batch {}", chunkNumber, totalChunks, failedKey);
-						allSuccess = false;
-						// 실패해도 다음 청크 계속 처리하고 실패한건 다시 저장
-						saveFailedBatch(chunk, batchTime + "_retry_chunk_" + chunkNumber);
-					}
+			// 청크 단위로 메모리 효율적 처리
+			while (processedCount < totalSize) {
+				// 현재 청크를 Redis에서 직접 가져와서 메모리 사용량 최소화
+				List<ShortUrlData> chunk = getChunkFromFailedBatch(failedKey, BATCH_SIZE);
+				
+				if (chunk.isEmpty()) {
+					break; // 더 이상 처리할 데이터 없음
 				}
-				if (allSuccess) {
-					// 재처리 성공 시 실패 키 삭제
-					redisTemplate.delete(failedKey);
-					log.info("Failed batch {} retried successfully and removed", failedKey);
+
+				int chunkNumber = (processedCount / BATCH_SIZE) + 1;
+				String chunkIdentifier = batchTime + "_retry_chunk_" + chunkNumber;
+
+				log.info("Processing chunk {} with {} items for batch {}",
+					chunkNumber, chunk.size(), failedKey);
+
+				boolean chunkSuccess = processBatchData(chunk, chunkIdentifier);
+
+				if (chunkSuccess) {
+					successfulChunks++;
+					log.debug("Chunk {} processed successfully", chunkNumber);
 				} else {
-					log.warn("Failed batch {} retry failed", failedKey);
+					failedChunks++;
+					// 실패한 청크만 새로운 키로 재저장
+					String failedChunkKey = saveFailedBatch(chunk, chunkIdentifier);
+					failedChunkKeys.add(failedChunkKey);
+					log.error("Failed to process chunk {}, saved to {}", chunkNumber, failedChunkKey);
 				}
+
+				processedCount += chunk.size();
 			}
+
+			// 원본 실패 키 삭제 (성공/실패 여부와 관계없이 처리 완료로 간주)
+			redisTemplate.delete(failedKey);
+
+			// 결과 설정
+			result.setStatus(failedChunks == 0 ? "ALL_SUCCESS" : "PARTIAL_SUCCESS");
+			result.setTotalProcessed(processedCount);
+			result.setSuccessfulChunks(successfulChunks);
+			result.setFailedChunks(failedChunks);
+			result.setFailedChunkKeys(failedChunkKeys);
+
+			log.info("Failed batch {} retry completed. Processed: {}, Successful chunks: {}, Failed chunks: {}", 
+				failedKey, processedCount, successfulChunks, failedChunks);
+
+			return result;
 
 		} catch (Exception e) {
 			log.error("Error retrying failed batch {}", batchTime, e);
+			result.setStatus("ERROR");
+			result.setErrorMessage(e.getMessage());
+			return result;
+		}
+	}
+
+	/**
+	 * 실패한 배치에서 청크 단위로 데이터를 가져오고 Redis에서 제거
+	 */
+	private List<ShortUrlData> getChunkFromFailedBatch(String failedKey, int chunkSize) {
+		List<ShortUrlData> chunk = new ArrayList<>();
+		
+		try {
+			List<Object> results = redisTemplate.executePipelined(new RedisCallback<Object>() {
+				@Override
+				public Object doInRedis(RedisConnection connection) {
+					for (int i = 0; i < chunkSize; i++) {
+						connection.rPop(redisTemplate.getStringSerializer().serialize(failedKey));
+					}
+					return null;
+				}
+			});
+
+			chunk = results.stream()
+				.filter(obj -> obj != null)
+				.map(obj -> {
+					try {
+						return objectMapper.convertValue(obj, ShortUrlData.class);
+					} catch (Exception e) {
+						log.error("Error converting ShortUrlData during chunk processing: {}", e.getMessage(), e);
+						// 변환 실패한 데이터는 별도 저장을 위해 원시 데이터로 보관
+						saveCorruptedData(obj, failedKey);
+						return null;
+					}
+				})
+				.filter(data -> data != null)
+				.toList();
+
+		} catch (Exception e) {
+			log.error("Error fetching chunk from failed batch {}", failedKey, e);
+		}
+
+		return chunk;
+	}
+
+	/**
+	 * JSON 변환 실패한 손상된 데이터를 별도 저장
+	 */
+	private void saveCorruptedData(Object corruptedData, String originalKey) {
+		try {
+			String corruptedKey = "corrupted:data:" + System.currentTimeMillis();
+			redisTemplate.opsForValue().set(corruptedKey, corruptedData, Duration.ofDays(7));
+			log.warn("Corrupted data saved to {} from {}", corruptedKey, originalKey);
+		} catch (Exception e) {
+			log.error("Failed to save corrupted data from {}", originalKey, e);
+		}
+	}
+
+	/**
+	 * 재시도 결과를 담는 내부 클래스
+	 */
+	public static class RetryResult {
+		private String status;
+		private int totalProcessed;
+		private int successfulChunks;
+		private int failedChunks;
+		private List<String> failedChunkKeys = new ArrayList<>();
+		private String errorMessage;
+
+		// Getters and Setters
+		public String getStatus() { return status; }
+		public void setStatus(String status) { this.status = status; }
+		
+		public int getTotalProcessed() { return totalProcessed; }
+		public void setTotalProcessed(int totalProcessed) { this.totalProcessed = totalProcessed; }
+		
+		public int getSuccessfulChunks() { return successfulChunks; }
+		public void setSuccessfulChunks(int successfulChunks) { this.successfulChunks = successfulChunks; }
+		
+		public int getFailedChunks() { return failedChunks; }
+		public void setFailedChunks(int failedChunks) { this.failedChunks = failedChunks; }
+		
+		public List<String> getFailedChunkKeys() { return failedChunkKeys; }
+		public void setFailedChunkKeys(List<String> failedChunkKeys) { this.failedChunkKeys = failedChunkKeys; }
+		
+		public String getErrorMessage() { return errorMessage; }
+		public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
+
+		@Override
+		public String toString() {
+			return String.format("RetryResult{status='%s', totalProcessed=%d, successfulChunks=%d, failedChunks=%d, failedChunkKeys=%s}", 
+				status, totalProcessed, successfulChunks, failedChunks, failedChunkKeys);
 		}
 	}
 }
