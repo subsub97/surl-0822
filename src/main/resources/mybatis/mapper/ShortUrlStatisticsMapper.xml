@@ -5,54 +5,66 @@
 
 <mapper namespace="com.megastudy.surlkdh.domain.statistics.infrastructure.mybatis.mapper.ShortUrlStatisticsMapper">
 
-    <!-- StatisticResponse DTO로 결과를 매핑합니다. -->
+
     <resultMap id="statisticsResultMap"
                type="com.megastudy.surlkdh.domain.statistics.controller.dto.response.StatisticsDataPoint">
         <result property="key" column="key_column"/>
         <result property="clicks" column="clicks_column"/>
     </resultMap>
 
+    <resultMap id="shortUrlClickResultMap"
+               type="com.megastudy.surlkdh.domain.statistics.entity.ShortUrlClicks">
+        <result property="shortUrlId" column="short_url_id"/>
+        <result property="countryCode" column="country_code"/>
+        <result property="deviceType" column="device_type"/>
+        <result property="referrer" column="referrer"/>
+        <result property="domain" column="domain"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
     <!-- 공통 WHERE 조건문 -->
-    <sql id="commonWhereClause">
-        <where>
-            <if test="request.startDate != null">
-                AND created_at >= #{request.startDate}
-            </if>
-            <if test="request.endDate != null">
-                AND created_at &lt;= #{request.endDate}
-            </if>
-            <!-- 다른 필터 조건들도 여기에 추가할 수 있습니다. -->
-        </where>
+    <sql id="commonFilterClause">
+        <if test="request.startDate != null">
+            AND created_at &gt;= #{request.startDate}
+        </if>
+        <if test="request.endDate != null">
+            AND created_at &lt;= #{request.endDate}
+        </if>
     </sql>
 
     <!-- 동적 그룹 통계 조회 쿼리 -->
-    <select id="findGroupByStatistics" resultMap="statisticsResultMap">
+    <select id="findStatisticsByShortUrl" resultMap="statisticsResultMap">
         SELECT
         <choose>
-            <when test="request.groupBy.name() == 'SHORT_URL'">short_url_id</when>
             <when test="request.groupBy.name() == 'DEVICE'">device_type</when>
             <when test="request.groupBy.name() == 'COUNTRY'">country_code</when>
             <when test="request.groupBy.name() == 'REFERRER'">referrer</when>
-            <when test="request.groupBy.name() == 'DAILY'">CAST(created_at AS DATE)</when>
+            <when test="request.groupBy.name() == 'DAILY'">FORMAT(created_at, 'yyyy-MM-dd')</when>
             <when test="request.groupBy.name() == 'MONTHLY'">FORMAT(created_at, 'yyyy-MM')</when>
             <when test="request.groupBy.name() == 'HOURLY'">FORMAT(created_at, 'yyyy-MM-dd HH:00')</when>
-            <otherwise>short_url_id</otherwise> <!-- 기본값 또는 예외 처리 -->
+            <when test="request.groupBy.name() == 'MINUTELY'">FORMAT(created_at, 'yyyy-MM-dd HH:mm')</when>
+            <when test="request.groupBy.name() == 'SECONDLY'">FORMAT(created_at, 'yyyy-MM-dd HH:mm:ss')</when>
+            <otherwise>device_type</otherwise>
         </choose>
         AS key_column,
         COUNT(*) AS clicks_column
         FROM
         short_url_clicks
-        <include refid="commonWhereClause"/>
+        <where>
+            short_url_id = #{shortUrlId}
+            <include refid="commonFilterClause"/>
+        </where>
         GROUP BY
         <choose>
-            <when test="request.groupBy.name() == 'SHORT_URL'">short_url_id</when>
             <when test="request.groupBy.name() == 'DEVICE'">device_type</when>
             <when test="request.groupBy.name() == 'COUNTRY'">country_code</when>
             <when test="request.groupBy.name() == 'REFERRER'">referrer</when>
-            <when test="request.groupBy.name() == 'DAILY'">CAST(created_at AS DATE)</when>
+            <when test="request.groupBy.name() == 'DAILY'">FORMAT(created_at, 'yyyy-MM-dd')</when>
             <when test="request.groupBy.name() == 'MONTHLY'">FORMAT(created_at, 'yyyy-MM')</when>
             <when test="request.groupBy.name() == 'HOURLY'">FORMAT(created_at, 'yyyy-MM-dd HH:00')</when>
-            <otherwise>short_url_id</otherwise>
+            <when test="request.groupBy.name() == 'MINUTELY'">FORMAT(created_at, 'yyyy-MM-dd HH:mm')</when>
+            <when test="request.groupBy.name() == 'SECONDLY'">FORMAT(created_at, 'yyyy-MM-dd HH:mm:ss')</when>
+            <otherwise>device_type</otherwise>
         </choose>
         <!-- 동적 정렬 -->
         <if test="pageable.sort.isSorted()">
@@ -68,29 +80,79 @@
         <if test="!pageable.sort.isSorted()">
             ORDER BY clicks_column DESC
         </if>
-        <!-- 페이지네이션 -->
         OFFSET #{pageable.offset} ROWS
         FETCH NEXT #{pageable.pageSize} ROWS ONLY
     </select>
 
-    <!-- 동적 그룹 통계의 전체 개수 조회 쿼리 (페이지네이션용) -->
-    <select id="countGroupByStatistics" resultType="long">
+
+    <select id="countStatisticsByShortUrl" resultType="long">
         SELECT
         COUNT(DISTINCT
         <choose>
-            <when test="request.groupBy.name() == 'SHORT_URL'">short_url_id</when>
             <when test="request.groupBy.name() == 'DEVICE'">device_type</when>
             <when test="request.groupBy.name() == 'COUNTRY'">country_code</when>
             <when test="request.groupBy.name() == 'REFERRER'">referrer</when>
-            <when test="request.groupBy.name() == 'DAILY'">CAST(created_at AS DATE)</when>
+            <when test="request.groupBy.name() == 'DAILY'">FORMAT(created_at, 'yyyy-MM-dd')</when>
             <when test="request.groupBy.name() == 'MONTHLY'">FORMAT(created_at, 'yyyy-MM')</when>
             <when test="request.groupBy.name() == 'HOURLY'">FORMAT(created_at, 'yyyy-MM-dd HH:00')</when>
-            <otherwise>short_url_id</otherwise>
+            <when test="request.groupBy.name() == 'MINUTELY'">FORMAT(created_at, 'yyyy-MM-dd HH:mm')</when>
+            <when test="request.groupBy.name() == 'SECONDLY'">FORMAT(created_at, 'yyyy-MM-dd HH:mm:ss')</when>
+            <otherwise>device_type</otherwise>
         </choose>
         )
         FROM
         short_url_clicks
-        <include refid="commonWhereClause"/>
+        <where>
+            short_url_id = #{shortUrlId}
+            <include refid="commonFilterClause"/>
+        </where>
+    </select>
+
+    <select id="countShortUrlClicksById" resultType="long">
+        SELECT
+        COUNT (*)
+        FROM
+        short_url_clicks
+        WHERE
+        short_url_id = #{shortUrlId}
+        <include refid="commonFilterClause"/>
+    </select>
+
+    <select id="findShortUrlClicksById" resultMap="shortUrlClickResultMap">
+        SELECT
+        short_url_id,
+        country_code,
+        device_type,
+        referrer,
+        domain,
+        created_at
+        FROM
+        short_url_clicks
+        WHERE
+        short_url_id = #{shortUrlId}
+        <include refid="commonFilterClause"/>
+        <if test="pageable.sort.isSorted()">
+            ORDER BY
+            <foreach collection="pageable.sort" item="order" separator=",">
+                ${order.property} ${order.direction}
+            </foreach>
+        </if>
+        <if test="!pageable.sort.isSorted()">
+            ORDER BY created_at DESC
+        </if>
+
+        OFFSET #{pageable.offset} ROWS
+        FETCH NEXT #{pageable.pageSize} ROWS ONLY
+    </select>
+
+    <select id="sumTotalClicks" resultType="long">
+        SELECT
+        COUNT(*)
+        FROM
+        short_url_clicks
+        WHERE
+        short_url_id = #{shortUrlId}
+        <include refid="commonFilterClause"/>
     </select>
 
     <insert id="bulkInsert" parameterType="java.util.List">
@@ -109,3 +171,4 @@
     </insert>
 
 </mapper>
+

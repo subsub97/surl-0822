@@ -1,8 +1,12 @@
 package com.megastudy.surlkdh.domain.statistics.service;
 
 import com.megastudy.surlkdh.domain.shorturl.entity.ShortUrl;
+import com.megastudy.surlkdh.domain.statistics.controller.dto.request.StatisticClicksRequest;
 import com.megastudy.surlkdh.domain.statistics.controller.dto.request.StatisticRequest;
+import com.megastudy.surlkdh.domain.statistics.controller.dto.response.GroupedStatisticsResponse;
+import com.megastudy.surlkdh.domain.statistics.controller.dto.response.ShortUrlClickResponse;
 import com.megastudy.surlkdh.domain.statistics.controller.dto.response.StatisticsDataPoint;
+import com.megastudy.surlkdh.domain.statistics.entity.ShortUrlClicks;
 import com.megastudy.surlkdh.domain.statistics.infrastructure.ShortUrlStatisticsRepositoryImpl;
 import com.megastudy.surlkdh.domain.statistics.scheduler.dto.request.ShortUrlData;
 import com.megastudy.surlkdh.infrastructure.geoip.GeoIpService;
@@ -54,11 +58,19 @@ public class StatisticsService {
         return true;
     }
 
-    public Page<StatisticsDataPoint> getGroupByStatistics(StatisticRequest request, Pageable pageable) {
-        return shortUrlStatisticsRepository.getGroupByStatistics(request, pageable);
+    public GroupedStatisticsResponse getGroupedStatistics(Long shortUrlId, StatisticRequest request, Pageable pageable) {
+        Page<StatisticsDataPoint> groupedDataPage = shortUrlStatisticsRepository.getGroupedStatisticsByShortUrl(shortUrlId, request, pageable);
+        long totalClicks = shortUrlStatisticsRepository.getTotalClicks(shortUrlId, request);
+        return new GroupedStatisticsResponse(totalClicks, groupedDataPage);
     }
 
-    private ShortUrlData createShortUrlDataRequest(ShortUrl shortUrl, String ipAddress, String userAgent, String referrer, String host) {
+    public Page<ShortUrlClickResponse> getShortUrlClicks(Long shortUrlId, StatisticClicksRequest request, Pageable pageable) {
+        Page<ShortUrlClicks> clicksPage = shortUrlStatisticsRepository.getShortUrlClicks(shortUrlId, request, pageable);
+        return clicksPage.map(ShortUrlClickResponse::from);
+    }
+
+    private ShortUrlData createShortUrlDataRequest(ShortUrl shortUrl, String ipAddress, String userAgent,
+                                                   String referrer, String host) {
         String country = getCountry(ipAddress);
         String platform = getPlatform(userAgent);
         String safeReferrer = referrer != null ? referrer : REFERRER_DIRECT;

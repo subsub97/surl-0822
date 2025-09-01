@@ -7,7 +7,14 @@ spring:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
-
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 10
+      idle-timeout: 30000
+      max-lifetime: 600000
+      connection-timeout: 30000
+      pool-name: HikariCP
+  
   sql:
     init:
       mode: always
@@ -34,9 +41,9 @@ mybatis:
 
 logging:
   level:
-    org.mybatis: DEBUG
-    org.apache.ibatis: DEBUG
-    com.megastudy.surlkdh: DEBUG
+    org.mybatis: ERROR
+    org.apache.ibatis: ERROR
+    com.megastudy.surlkdh: ERROR
 
 jwt:
   secret: ${JWT_SECRET}
