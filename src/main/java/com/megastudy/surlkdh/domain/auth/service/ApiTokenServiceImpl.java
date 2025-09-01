@@ -13,7 +13,7 @@ import com.megastudy.surlkdh.domain.auth.service.port.ApiTokenRepository;
 import com.megastudy.surlkdh.domain.member.entity.Department;
 import com.megastudy.surlkdh.domain.member.entity.Role;
 import com.megastudy.surlkdh.infrastructure.security.MemberPrincipal;
-import com.megastudy.surlkdh.infrastructure.security.jwt.exception.TokenErrorCode;
+import com.megastudy.surlkdh.domain.auth.exception.AuthErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -51,7 +51,7 @@ public class ApiTokenServiceImpl implements ApiTokenService {
         String hashedValue = hashToken(tokenValue);
         ApiToken apiToken = apiTokenRepository.findByTokenValue(hashedValue).orElseThrow(() -> {
             log.error("ApiToken not found for value: {}", hashedValue);
-            return new BusinessException(TokenErrorCode.NOT_FOUND);
+            return new BusinessException(AuthErrorCode.TOKEN_NOT_FOUND);
         });
 
         auditContext.setResourceId(apiToken.getApiTokenId());
@@ -106,7 +106,7 @@ public class ApiTokenServiceImpl implements ApiTokenService {
         ApiToken apiToken = apiTokenRepository.findById(apiTokenId)
                 .orElseThrow(() -> {
                     log.error("ApiToken not found for id: {}", apiTokenId);
-                    return new BusinessException(CommonErrorCode.BAD_REQUEST);
+                    return new BusinessException(AuthErrorCode.TOKEN_NOT_FOUND);
                 });
 
         validateUpdatePermissions(apiToken, member);
@@ -137,7 +137,7 @@ public class ApiTokenServiceImpl implements ApiTokenService {
         ApiToken apiToken = apiTokenRepository.findById(apiTokenId)
                 .orElseThrow(() -> {
                     log.error("ApiToken not found for id: {}", apiTokenId);
-                    return new BusinessException(CommonErrorCode.BAD_REQUEST);
+                    return new BusinessException(AuthErrorCode.TOKEN_NOT_FOUND);
                 });
 
         validateAccessPermissions(apiToken, member);
@@ -152,7 +152,7 @@ public class ApiTokenServiceImpl implements ApiTokenService {
         ApiToken apiToken = apiTokenRepository.findById(apiTokenId)
                 .orElseThrow(() -> {
                     log.error("ApiToken not found for id: {}", apiTokenId);
-                    return new BusinessException(CommonErrorCode.BAD_REQUEST);
+                    return new BusinessException(AuthErrorCode.TOKEN_NOT_FOUND);
                 });
 
         validateUpdatePermissions(apiToken, member);
@@ -186,7 +186,7 @@ public class ApiTokenServiceImpl implements ApiTokenService {
         ApiToken apiToken = apiTokenRepository.findByTokenValue(apiTokenValue)
                 .orElseThrow(() -> {
                     log.error("ApiToken not found for value: {}", apiTokenValue);
-                    return new BusinessException(TokenErrorCode.NOT_FOUND);
+                    return new BusinessException(AuthErrorCode.TOKEN_NOT_FOUND);
                 });
 
         List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(apiToken.getRole().getKey()));
@@ -209,7 +209,7 @@ public class ApiTokenServiceImpl implements ApiTokenService {
 
         if (!reachableGrantedAuthorities.contains(targetAuthority)) {
             log.error("자신보다 높거나 같은 등급의 토큰을 생성할 수 없습니다. 요청 등급: {}", request.getRole().getKey());
-            throw new BusinessException(CommonErrorCode.BAD_REQUEST);
+            throw new BusinessException(AuthErrorCode.CREATE_PERMISSION_DENIED);
         }
     }
 
@@ -223,7 +223,7 @@ public class ApiTokenServiceImpl implements ApiTokenService {
         if (!apiToken.getMemberId().equals(member.getId())) {
             log.error("본인이 생성한 토큰만 수정할 수 있습니다. 요청한 멤버 ID: {}, 토큰 소유자 ID: {}", member.getId(),
                     apiToken.getMemberId());
-            throw new BusinessException(CommonErrorCode.FORBIDDEN_UPDATE);
+            throw new BusinessException(AuthErrorCode.UPDATE_PERMISSION_DENIED);
         }
     }
 
@@ -237,7 +237,7 @@ public class ApiTokenServiceImpl implements ApiTokenService {
         if (!apiToken.getDepartment().equals(member.getDepartment())) {
             log.error("본인이 소속한 부서의 토큰만 접근할 수 있습니다. 요청한 부서: {}, 토큰 소유자 부서: {}",
                     member.getDepartment(), apiToken.getDepartment());
-            throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
+            throw new BusinessException(AuthErrorCode.ACCESS_DENIED);
         }
     }
 

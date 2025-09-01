@@ -5,6 +5,7 @@ import java.util.function.Function;
 
 import com.megastudy.surlkdh.common.BaseTimeEntity;
 import com.megastudy.surlkdh.common.exception.BusinessException;
+import com.megastudy.surlkdh.domain.shorturl.exception.ShortUrlErrorCode;
 import com.megastudy.surlkdh.common.exception.CommonErrorCode;
 import com.megastudy.surlkdh.domain.auth.entity.UserType;
 import com.megastudy.surlkdh.domain.member.entity.Department;
@@ -46,13 +47,13 @@ public class ShortUrl extends BaseTimeEntity {
 	public void changeShortCode(String newShortCode, Function<String, Boolean> isShortCodeAvailable) {
 
 		if (newShortCode == null || newShortCode.isEmpty()) {
-			throw new BusinessException(CommonErrorCode.BAD_REQUEST);
+			throw new BusinessException(ShortUrlErrorCode.INVALID_URL);
 		}
 		if (newShortCode.equals(this.shortCode)) {
 			return;
 		}
 		if (!isShortCodeAvailable.apply(newShortCode)) {
-			throw new BusinessException(CommonErrorCode.DUPLICATION_ERROR);
+			throw new BusinessException(ShortUrlErrorCode.DUPLICATION_ERROR);
 		}
 
 		this.shortCode = newShortCode;
@@ -64,7 +65,7 @@ public class ShortUrl extends BaseTimeEntity {
 
 	public void setExpiration(LocalDateTime newExpiresAt) {
 		if (newExpiresAt != null && newExpiresAt.isBefore(LocalDateTime.now())) {
-			throw new BusinessException(CommonErrorCode.BAD_REQUEST);
+			throw new BusinessException(ShortUrlErrorCode.INVALID_URL);
 		}
 		this.expiresAt = newExpiresAt;
 	}
@@ -78,14 +79,14 @@ public class ShortUrl extends BaseTimeEntity {
 
 	public void changePcUrl(String newPcUrl) {
 		if (newPcUrl == null || newPcUrl.isEmpty()) {
-			throw new BusinessException(CommonErrorCode.BAD_REQUEST);
+			throw new BusinessException(ShortUrlErrorCode.INVALID_URL);
 		}
 		this.pcUrl = newPcUrl;
 	}
 
 	public void changeMobileUrl(String mobileUrl) {
 		if (mobileUrl == null || mobileUrl.isEmpty()) {
-			throw new BusinessException(CommonErrorCode.BAD_REQUEST);
+			throw new BusinessException(ShortUrlErrorCode.INVALID_URL);
 		}
 		this.pcUrl = mobileUrl;
 	}

@@ -1,7 +1,9 @@
 package com.megastudy.surlkdh.domain.shorturl.service;
 
 import com.megastudy.surlkdh.common.exception.BusinessException;
+import com.megastudy.surlkdh.domain.shorturl.exception.ShortUrlErrorCode;
 import com.megastudy.surlkdh.common.exception.CommonErrorCode;
+import com.megastudy.surlkdh.domain.auth.exception.AuthErrorCode;
 import com.megastudy.surlkdh.common.exception.RetryException;
 import com.megastudy.surlkdh.domain.audit.aop.AuditContext;
 import com.megastudy.surlkdh.domain.auth.entity.UserType;
@@ -84,14 +86,14 @@ public class ShortUrlServiceImpl implements ShortUrlService {
             if (attempt == MAX_RANDOM_RETRIES) {
                 log.error("최대 재시도 횟수({}) 도달. 단축 URL 생성에 실패했습니다. pc_originalUrl={}", MAX_RANDOM_RETRIES,
                         request.getPcUrl());
-                throw new RetryException(CommonErrorCode.MAX_RETRY_ERROR);
+                throw new RetryException(ShortUrlErrorCode.MAX_RETRY_ERROR);
             }
         }
 
         // 도달 불가능 (방어적 코드)
         log.error("예상치 못한 오류: 단축 URL 생성 로직이 도달 불가능한 코드에 도달했습니다. pc_originalUrl={}",
                 request.getPcUrl());
-        throw new RetryException(CommonErrorCode.MAX_RETRY_ERROR);
+        throw new RetryException(ShortUrlErrorCode.MAX_RETRY_ERROR);
     }
 
     @Override
@@ -103,7 +105,7 @@ public class ShortUrlServiceImpl implements ShortUrlService {
         ShortUrl shortUrl = shortUrlRepository.findByShortUrlId(shortUrlId)
                 .orElseThrow(() -> {
                     log.warn("업데이트할 단축 URL을 찾을 수 없습니다: shortUrlId={}", shortUrlId);
-                    return new BusinessException(CommonErrorCode.BAD_REQUEST);
+                    return new BusinessException(ShortUrlErrorCode.NOT_FOUND);
                 });
 
         log.debug("단축 URL {} 현재 정보: shortCode={}, note={}, expiresAt={}, department={}",
@@ -156,7 +158,7 @@ public class ShortUrlServiceImpl implements ShortUrlService {
         ShortUrl shortUrl = shortUrlRepository.findByShortUrlId(shortUrlId)
                 .orElseThrow(() -> {
                     log.warn("조회할 단축 URL을 찾을 수 없습니다: shortUrlId={}", shortUrlId);
-                    return new BusinessException(CommonErrorCode.BAD_REQUEST);
+                    return new BusinessException(ShortUrlErrorCode.NOT_FOUND);
                 });
         validateAccessPermissions(shortUrl, role, department);
         log.info("단축 URL {} 조회 성공.", shortUrlId);
@@ -182,7 +184,7 @@ public class ShortUrlServiceImpl implements ShortUrlService {
         shortUrlRepository.findByShortUrlId(shortUrlId)
                 .orElseThrow(() -> {
                     log.warn("삭제할 단축 URL을 찾을 수 없습니다: shortUrlId={}", shortUrlId);
-                    return new BusinessException(CommonErrorCode.BAD_REQUEST);
+                    return new BusinessException(ShortUrlErrorCode.NOT_FOUND);
                 });
 
         shortUrlRepository.deleteShortUrlByShortUrlId(shortUrlId);
@@ -194,7 +196,7 @@ public class ShortUrlServiceImpl implements ShortUrlService {
     public String redirect(String shortCode, String userAgent, String referrer, String ipAddress, String host) {
 
         ShortUrl shortUrl = shortUrlRepository.findByShortCode(shortCode)
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.BAD_REQUEST));
+                .orElseThrow(() -> new BusinessException(ShortUrlErrorCode.NOT_FOUND));
 
         DeviceType deviceType = parseDeviceType(userAgent);
 
@@ -222,7 +224,7 @@ public class ShortUrlServiceImpl implements ShortUrlService {
     private void assertAvailableThrow(String shortCode) {
         if (!isAvailable(shortCode)) {
             log.warn("요청된 단축 코드 {}가 이미 사용 중입니다. 중복 오류 발생.", shortCode);
-            throw new BusinessException(CommonErrorCode.DUPLICATION_ERROR);
+            throw new BusinessException(ShortUrlErrorCode.DUPLICATION_ERROR);
         }
     }
 
@@ -261,7 +263,7 @@ public class ShortUrlServiceImpl implements ShortUrlService {
         if (!shortUrl.getDepartment().equals(department)) {
             log.error("본인이 소속한 부서의 정보만 접근할 수 있습니다. 요청한 부서: {}, 요청자 부서: {}. shortUrlId={}",
                     shortUrl.getDepartment(), department.getName(), shortUrl.getShortUrlId());
-            throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
+            throw new BusinessException(AuthErrorCode.ACCESS_DENIED);
         }
         log.debug("일반 사용자 권한으로 접근 허용: shortUrlId={}, department={}", shortUrl.getShortUrlId(), department.getName());
     }

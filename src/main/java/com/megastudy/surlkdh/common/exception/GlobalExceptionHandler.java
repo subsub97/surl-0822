@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.megastudy.surlkdh.common.api.ApiResponse;
-import com.megastudy.surlkdh.domain.member.exception.NotExistMemberException;
 import com.megastudy.surlkdh.infrastructure.security.jwt.exception.TokenErrorCode;
+import com.megastudy.surlkdh.domain.auth.exception.AuthErrorCode;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -37,7 +37,7 @@ public class GlobalExceptionHandler {
 		} else if (ex instanceof UnsupportedJwtException) {
 			code = TokenErrorCode.UNSUPPORTED;
 		} else {
-			code = TokenErrorCode.TAMPERED;
+			code = TokenErrorCode.INVALID;
 		}
 		return buildErrorResponse(code);
 	}
@@ -57,11 +57,6 @@ public class GlobalExceptionHandler {
 		return buildErrorResponse(CommonErrorCode.BAD_REQUEST, ex.getMessage());
 	}
 
-	@ExceptionHandler(NotExistMemberException.class)
-	public ResponseEntity<ApiResponse<Void>> handleNotExistMemberException(NotExistMemberException ex) {
-		log.error("IllegalArgumentException occurred: {}", ex.getMessage());
-		return buildErrorResponse(ex.getErrorCode());
-	}
 
 	@ExceptionHandler(BusinessException.class)
 	public ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException ex) {
@@ -71,12 +66,14 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
 	public ResponseEntity<ApiResponse<Void>> handleAccessDenied(Exception ex) {
-		return buildErrorResponse(TokenErrorCode.UNAUTHORIZED);
+		log.warn("Access denied: {}", ex.getMessage());
+		return buildErrorResponse(AuthErrorCode.ACCESS_DENIED);
 	}
 
 	@ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
 	public ResponseEntity<ApiResponse<Void>> handleAuthException(Exception ex) {
-		return buildErrorResponse(TokenErrorCode.UNAUTHORIZED);
+		log.warn("Authentication failed: {}", ex.getMessage());
+		return buildErrorResponse(AuthErrorCode.AUTHENTICATION_REQUIRED);
 	}
 
 	@ExceptionHandler(HttpMessageNotReadableException.class)

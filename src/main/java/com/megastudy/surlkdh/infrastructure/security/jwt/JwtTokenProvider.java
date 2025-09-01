@@ -23,7 +23,7 @@ import com.megastudy.surlkdh.domain.member.entity.Department;
 import com.megastudy.surlkdh.domain.member.entity.Role;
 import com.megastudy.surlkdh.infrastructure.security.MemberPrincipal;
 import com.megastudy.surlkdh.infrastructure.security.jwt.exception.TokenErrorCode;
-import com.megastudy.surlkdh.infrastructure.security.jwt.exception.UnAuthorizedException;
+import com.megastudy.surlkdh.common.exception.BusinessException;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -89,7 +89,7 @@ public class JwtTokenProvider {
 		// 2) 권한 CSV 파싱
 		String authCsv = claims.get(CLAIM_ROLE, String.class);
 		if (authCsv == null || authCsv.isBlank()) {
-			throw new UnAuthorizedException(TokenErrorCode.UNAUTHORIZED);
+			throw new BusinessException(TokenErrorCode.UNAUTHORIZED);
 		}
 		Collection<? extends GrantedAuthority> authorities = Arrays.stream(authCsv.split(","))
 			.map(String::trim)
